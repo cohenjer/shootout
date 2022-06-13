@@ -1,0 +1,6 @@
+tensorly
+numpy
+plotly
+kaleido
+matplotlib
+pandas
