@@ -26,6 +26,7 @@ with root in the root folder of this package.
 ## TODOS
 - proper documentation (will use sphinx)
 - plotly plots modifiers
+- change test dataframe to be much much smaller
 
 ## Feedback
 I wrote this for myself, but if you have some ideas for improvements or new features, feel free to drop an issue or a pull request.
