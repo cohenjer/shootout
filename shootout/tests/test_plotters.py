@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 # Testing plot_speed_comparison
 df = pd.read_pickle("run-example")
 # note: df has a column "full_error" and "full_time" which we will use for finding the performance and various thresholds
-thresh = np.logspace(-3,-8,50) 
+thresh = np.logspace(6,2,50) 
 scores_time, scores_it, timings, iterations = find_best_at_all_thresh(df,thresh, 5,
                                                 err_name="full_error", time_name="full_time")
 

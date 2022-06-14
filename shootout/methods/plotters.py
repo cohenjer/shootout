@@ -11,6 +11,8 @@ def plot_speed_comparison(thresh_time, scores_time, thresh_it, scores_it, legend
         plt.legend(legend)
     if title:
         plt.title(title)
+    else:
+        plt.title("Faster runs in time")
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.subplot(122)
@@ -19,10 +21,15 @@ def plot_speed_comparison(thresh_time, scores_time, thresh_it, scores_it, legend
         plt.legend(legend)
     if title:
         plt.title(title)
+    else:
+        plt.title("Faster runs in iteration")
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     return fig0
 
+def plot_conv():
+    # TODO: subplots with iterations and time
+    return
 
 def change_px_fig():
     # some custom function to modify plotly express plots, because I always forget the correct commands

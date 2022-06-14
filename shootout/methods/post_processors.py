@@ -113,26 +113,37 @@ def my_argmin(a):
     return myargmin
 
 
-def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_name="algorithm", other_names=None, max_time=tl.inf, groups=False, groups_names=None, nb_seed_used = tl.inf):
+def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_name="algorithm", other_names=None, max_time=tl.inf, groups=False, groups_names=None, nb_seed_used = tl.inf, filters=None):
     # Plotting a few curves for all methods
 
-    # TODO: only use the runs from user-defined parameters?
+    # TODO: filter runs --> done with filters dictionary
 
     # We start by creating a new dataframe in long format (one error per row instead of storing list)
     df2 = pd.DataFrame()
+    # exploring the errors one by one
     for idx_pd,i in enumerate(df[err_name]):
+        # filtering by seeds
         if df.iloc[idx_pd]["seed_idx"]<nb_seed_used:
-            its = tl.arange(0,len(i),1)
-            dic = {
-                "it":its,
-                time_name: df.iloc[idx_pd][time_name],
-                err_name:i,
-                algorithm_name:df.iloc[idx_pd][algorithm_name],
-                "seed_idx":df.iloc[idx_pd]["seed_idx"]}
-                # Other custom names to store
-            for name in other_names:
-                dic.update({name: df.iloc[idx_pd][name]})
-            df2=pd.concat([df2, pd.DataFrame(dic)], ignore_index=True)
+            # other filters
+            if filters:
+                flag=1
+                for cond in filters:
+                    if df.iloc[idx_pd][cond]!=filters[cond]:
+                        flag = 0
+            else:
+                flag=1
+            if flag:
+                its = tl.arange(0,len(i),1)
+                dic = {
+                    "it":its,
+                    time_name: df.iloc[idx_pd][time_name],
+                    err_name:i,
+                    algorithm_name:df.iloc[idx_pd][algorithm_name],
+                    "seed_idx":df.iloc[idx_pd]["seed_idx"]}
+                    # Other custom names to store
+                for name in other_names:
+                    dic.update({name: df.iloc[idx_pd][name]})
+                df2=pd.concat([df2, pd.DataFrame(dic)], ignore_index=True)
 
     # cutting time for more regular plots
     if max_time:
@@ -144,6 +155,7 @@ def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_n
         if not groups_names:
             # TODO warning
             print("You asked to group convergence plots together, but no parameter has been provided for grouping.")
+        groups_names += ["seed_idx"]
         for name in groups_names:
             zip_arg.append(df2[name])
         df2["groups"] = list(zip(*zip_arg))
