@@ -110,7 +110,7 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
         if name_store:
             path_store_full += name_store
         else:
-            path_store_full += "run-{}".format(datetime.today().strftime('%Y-%m-%d %H:%M'))
+            path_store_full += "run-{}".format(datetime.today().strftime('%Y-%m-%d_%H-%M'))
         df.to_pickle(path_store_full)
         return fun # This is what the wrapped function will actually be
     return inner_run_and_track # This is the nature of wrapper(nanana)(.) map. Parameters in kwargs and args can parameterize the inner call
