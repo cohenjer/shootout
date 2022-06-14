@@ -1,6 +1,7 @@
 # A first test for my shoot-out decorators
 import inspect
 import itertools
+import copy
 import os
 import pandas
 from datetime import datetime
@@ -9,6 +10,7 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
                     verbose=True, nb_seeds=1, **kwa):
     '''
     AMAZING DOCUMENTATION
+    Note: outputs must have nbr of algorithm lengths, but imputs can be objectified
     '''
     # Preprocessing: converting any single value in kwa to a singleton list
     for i in kwa:
@@ -61,7 +63,25 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
                 # we have variable inputs now we add default inputs inferred earlier
                 for name in default_params:
                     store_dic.update({name:inputs[name].default})
-                # A final static storage: algorithms name provided by user TODO: better solution? annoying to write names :/
+                # Optional manual tracking
+                if add_track:
+                    store_dic.update(add_track)
+                # A counterintuitive step is to unbracket all the singleton list parameter values in the dictionary, but split other lists. Indeed, plotly will have to consider these values as objects to store several lines simultaneously, and this does the job efficiently.
+                dic_copy = copy.copy(store_dic)
+                # copy to avoid changing the dictionary online, which fails
+                for elem in dic_copy:
+                    if type(store_dic[elem]) == list:
+                        if len(store_dic[elem])==1:
+                            store_dic[elem] = store_dic[elem][0]
+                        else:
+                            # we go over all elements of the list and split them in the dictionary
+                            for i in range(len(store_dic[elem])):
+                                store_dic[elem+"_"+str(i)] = store_dic[elem][i]
+                            # Then remove the original list
+                            # Otherwise when creating the DataFrame, we have lists of various sizes in the dic and this is not accepted as input
+                            del store_dic[elem]
+                del dic_copy
+                # A static storage: algorithms name provided by user TODO: better solution? annoying to write names :/
                 if algorithm_names:
                     store_dic.update({"algorithm": algorithm_names})
                 # Storing seed index
@@ -74,15 +94,11 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
                 # 1. outputs is one dictionary
                 # 2. the error and timing lists must be inside list themselves
                 store_dic.update(outputs)
-
-                # Optional manual tracking
-                if add_track:
-                    store_dic.update(add_track)
-                
-                # A counterintuitive step is to unbracket all the parameter values in the dictionary. Indeed, plotly will have to consider these values as objects to store several lines simultaneously, and this does the job efficiently.
+                # Again remove singletons if user used some in outputs; TODO: support list in outputs which are not of fixed size?
                 for elem in store_dic:
                     if type(store_dic[elem]) == list and len(store_dic[elem])==1:
                         store_dic[elem] = store_dic[elem][0]
+
                 # We can finally update the pandas DataFrame with all the run information
                 df= pandas.concat([df,pandas.DataFrame(store_dic)], ignore_index=True)
 

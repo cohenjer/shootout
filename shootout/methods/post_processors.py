@@ -17,10 +17,10 @@ def find_best_at_all_thresh(df, thresh, batch_size, err_name="errors", time_name
     ----------
     df : Pandas DataFrame
          The dataframe containing the errors and timings for each algorithm at each iterations, for several runs.
-         For details on the expected names, check synthethic_comparisons_Frobenius.py
+         For details on the expected names, check synthetic_comparisons_Frobenius.py
          Because I am a lazy coder:
             - Batch size must be constant
-            - The algorithms must always be storred in df in the same order
+            - The algorithms must always be stored in df in the same order
 
     thresh: list
             A list of thresholds to be used for computing which method was faster.

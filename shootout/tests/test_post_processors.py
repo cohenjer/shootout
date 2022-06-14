@@ -9,18 +9,16 @@ import numpy as np
 
 df = pd.read_pickle("run-example")
 # note: df has a column "full_error" and "full_time" which we will use for finding the performance and various thresholds
-thresh = np.logspace(-3,-8,50) 
-scores_time, scores_it, timings, iterations = find_best_at_all_thresh(df,thresh, 5,
-                                                err_name="full_error", time_name="full_time")
+thresh = np.logspace(5,2,50) 
+scores_time, scores_it, timings, iterations = find_best_at_all_thresh(df,thresh, 2)
 # stupid unit test
-assert scores_time[0,0] == 50.
+assert scores_time[0,0] == 2.
 
 # Testing df_to_convergence_df
-df2 = df_to_convergence_df(df, err_name="full_error", time_name="full_time", algorithm_name="method",
-                            other_names=["NbIter_inner", "m", "n", "r", "noise_variance"], max_time=0.5,
-                            nb_seed_used=5, groups=True, groups_names=["r", "n", "m", "noise_variance"])
+df2 = df_to_convergence_df(df, other_names=["U_lines","ranks_0"], max_time=1.5,
+                            nb_seed_used=2, groups=True, groups_names=["U_lines"])
 # another stupid test
-assert len(df2) == 452752
+assert len(df2) == 3966
 
 # Testing err_at_time_or_it
-df = error_at_time_or_it(df, time_stamps=[0.1,0.5,1], it_stamps=[0,10,100], err_name="full_error", time_name="full_time")
+df = error_at_time_or_it(df, time_stamps=[0.1,0.5,1], it_stamps=[0,10,100])
