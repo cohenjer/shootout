@@ -52,8 +52,8 @@ def find_best_at_all_thresh(df, thresh, batch_size, err_name="errors", time_name
                 it_reached.append(pos_err)
                 pos+=1
         if len(time_reached)<len(thresh):
-            time_reached = time_reached +( (len(thresh)-len(time_reached))*[tl.inf] )
-            it_reached = it_reached +( (len(thresh)-len(it_reached))*[tl.inf] )
+            time_reached = time_reached +( (len(thresh)-len(time_reached))*[np.Inf] )
+            it_reached = it_reached +( (len(thresh)-len(it_reached))*[np.Inf] )
         timings.append(time_reached)
         iterations.append(it_reached)
     # casting as a tl tensor (matrix) for slicing vertically
@@ -95,7 +95,7 @@ def my_argmin(a):
     argmin but returns list of equal indices. Axis must be 1, a is a third order tensor.
     """
     tutu = a.min(axis=1)[:,None]
-    tutu[tutu==tl.inf]=0 #removing tl.inf
+    tutu[tutu==np.Inf]=0 #removing tl.inf
     minpos = (a == tutu)
     # TODO: remove np.Inf counting
     tlargmin = tl.argmin(a,axis=1)
