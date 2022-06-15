@@ -8,6 +8,7 @@ import tensorly as tl
 import pandas as pd
 # for internal stuff
 import numpy as np
+pd.options.mode.chained_assignment = None  # default='warn'
 
 def find_best_at_all_thresh(df, thresh, batch_size, err_name="errors", time_name="timings"):
     """
@@ -113,37 +114,38 @@ def my_argmin(a):
     return myargmin
 
 
-def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_name="algorithm", other_names=None, max_time=tl.inf, groups=False, groups_names=None, nb_seed_used = tl.inf, filters=None):
+def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_name="algorithm", other_names=None, max_time=np.Inf, groups=False, groups_names=None, filters=None):
     # Plotting a few curves for all methods
-
-    # TODO: filter runs --> done with filters dictionary
 
     # We start by creating a new dataframe in long format (one error per row instead of storing list)
     df2 = pd.DataFrame()
     # exploring the errors one by one
     for idx_pd,i in enumerate(df[err_name]):
-        # filtering by seeds
-        if df.iloc[idx_pd]["seed_idx"]<nb_seed_used:
-            # other filters
-            if filters:
-                flag=1
-                for cond in filters:
+        # filters including seeds
+        if filters:
+            flag=1
+            for cond in filters:
+                # filters entries can be lists or floats/ints. two different behaviors.
+                if type(filters[cond])==list:
+                    if df.iloc[idx_pd][cond] not in filters[cond]:
+                        flag = 0
+                else:
                     if df.iloc[idx_pd][cond]!=filters[cond]:
                         flag = 0
-            else:
-                flag=1
-            if flag:
-                its = tl.arange(0,len(i),1)
-                dic = {
-                    "it":its,
-                    time_name: df.iloc[idx_pd][time_name],
-                    err_name:i,
-                    algorithm_name:df.iloc[idx_pd][algorithm_name],
-                    "seed_idx":df.iloc[idx_pd]["seed_idx"]}
-                    # Other custom names to store
-                for name in other_names:
-                    dic.update({name: df.iloc[idx_pd][name]})
-                df2=pd.concat([df2, pd.DataFrame(dic)], ignore_index=True)
+        else:
+            flag=1
+        if flag:
+            its = tl.arange(0,len(i),1)
+            dic = {
+                "it":its,
+                time_name: df.iloc[idx_pd][time_name],
+                err_name:i,
+                algorithm_name:df.iloc[idx_pd][algorithm_name],
+                "seed_idx":df.iloc[idx_pd]["seed_idx"]}
+                # Other custom names to store
+            for name in other_names:
+                dic.update({name: df.iloc[idx_pd][name]})
+            df2=pd.concat([df2, pd.DataFrame(dic)], ignore_index=True)
 
     # cutting time for more regular plots
     if max_time:
@@ -185,3 +187,14 @@ def error_at_time_or_it(df, time_stamps=None, it_stamps=None, err_name="errors",
         df["err_at_it_"+str(it)] = store_list
     return df
             
+def regroup_columns(df,keys=None, how_many=None):
+    """
+    Because we split input lists in DataFrames for storage, it may be convenient to re-introduce the original lists as columns on user demand.
+    Keys is the list of strings of names of the form foo_n where foo is in keys and n is an integer.
+    How many tells the upper bound on n.
+    """
+    for name in keys:
+        df[name] = pd.Series([[] for i in range(len(df))])
+        for j in range(len(df)):
+            df[name][j] = [df[name+"_"+str(i)][j] for i in range(how_many)]
+    return df

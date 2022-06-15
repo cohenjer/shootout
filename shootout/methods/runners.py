@@ -10,9 +10,10 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
                     verbose=True, nb_seeds=1, **kwa):
     '''
     AMAZING DOCUMENTATION
-    Note: outputs must have nbr of algorithm lengths, but imputs can be objectified
+    Note: outputs must have nbr of algorithm lengths, but inputs can be objectified
     '''
     # Preprocessing: converting any single value in kwa to a singleton list
+    # TODO: useful?
     for i in kwa:
         if type(kwa[i])!= list:
             print("Converting single parameter swipe to singleton")
