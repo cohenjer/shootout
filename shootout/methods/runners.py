@@ -7,7 +7,7 @@ import pandas
 from datetime import datetime
 
 def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_store=None,
-                    verbose=True, nb_seeds=1, **kwa):
+                    verbose=True, nb_seeds=1, single_method=True, **kwa):
     '''
     AMAZING DOCUMENTATION
     Note: outputs must have nbr of algorithm lengths, but inputs can be objectified
@@ -18,6 +18,13 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
         if type(kwa[i])!= list:
             print("Converting single parameter swipe to singleton")
             kwa[i] = [kwa[i]]
+
+    if algorithm_names:
+        if len(algorithm_names)>1:
+            single_method=False
+    else:
+        # TODO Warning
+        print("Consider adding algorithm names to benefit from automatic labeling of runs")
 
     def inner_run_and_track(fun):
         # Before all, initialize our storage DataFrame
@@ -88,20 +95,23 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
                 # Storing seed index
                 store_dic.update({"seed_idx": s})
 
+
                 # Now we deal with outputs. 
                 # They are trickier because we would like to point out errors(per iteration) and time(per iteration)
                 # we must also record an output per algorithm, ie. get the name of the algorithms
                 # Thus we make some assumptions on the outputs
                 # 1. outputs is one dictionary
-                # 2. the error and timing lists must be inside list themselves
+                # 2. the error, timing and any other alg. dependent quantity must be inside list of same length
+                # For a single run, we allow the user to simply provide anything that will be added as an object to the df
+                if single_method:
+                    for elem in outputs:
+                        outputs[elem] = [outputs[elem]] # double bracket makes pandas objectify this
                 store_dic.update(outputs)
-                # Again remove singletons if user used some in outputs; TODO: support list in outputs which are not of fixed size?
-                for elem in store_dic:
-                    if type(store_dic[elem]) == list and len(store_dic[elem])==1:
-                        store_dic[elem] = store_dic[elem][0]
 
                 # We can finally update the pandas DataFrame with all the run information
-                df= pandas.concat([df,pandas.DataFrame(store_dic)], ignore_index=True)
+                # A temporary DataFrame without outputs
+                df_temp = pandas.DataFrame(store_dic)
+                df= pandas.concat([df,df_temp], ignore_index=True)
 
         # To store the dataframe, we use the provided path, otherwise we place at runpath
         if path_store:
