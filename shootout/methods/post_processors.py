@@ -141,7 +141,7 @@ def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_n
                 time_name: df.iloc[idx_pd][time_name],
                 err_name:i,
                 algorithm_name:df.iloc[idx_pd][algorithm_name],
-                "seed_idx":df.iloc[idx_pd]["seed_idx"]}
+                "seed":df.iloc[idx_pd]["seed"]}
                 # Other custom names to store
             for name in other_names:
                 dic.update({name: df.iloc[idx_pd][name]})
@@ -157,7 +157,7 @@ def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_n
         if not groups_names:
             # TODO warning
             print("You asked to group convergence plots together, but no parameter has been provided for grouping.")
-        groups_names += ["seed_idx"]
+        groups_names += ["seed"]
         for name in groups_names:
             zip_arg.append(df2[name])
         df2["groups"] = list(zip(*zip_arg))
@@ -198,3 +198,83 @@ def regroup_columns(df,keys=None, how_many=None):
         for j in range(len(df)):
             df[name][j] = [df[name+"_"+str(i)][j] for i in range(how_many)]
     return df
+
+def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, logtime=False, npoints=500):
+    """
+    some doc
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        raw shootout results dataframe with errors and time in lists.
+    k  : int, default 0
+        the max time for interpolation will be the (longest - k) runtime for the algorithms. Set to k>0 if k runs are abnormally long.
+    logtime : boolean, default False
+        choose if interpolation grid is linear (False) or logarithmic (True). Set to True when timings are very different between several runs.
+    npoints : int, default 500
+        number of iterpolation points.
+    """
+    # First we look for the k-th max timing over all runs
+    maxtime_list = []
+    for timings in df[time_name]:
+        maxtime_list.append(timings[-1])
+    kmaxtime = np.sort(maxtime_list)[-1-k]
+    # then we create a grid based on that time
+    if logtime:
+        time_grid = np.logspace(0, kmaxtime, npoints)
+    else:
+        time_grid = np.linspace(0, kmaxtime, npoints)
+    # creating dummy columns
+    df["errors_interp"] = df[err_name]
+    df["timings_interp"] = df[time_name]
+    # now we interpolate each error on that grid
+    for idx_errors, errors in enumerate(df[err_name]):
+        new_errors = np.interp(time_grid, df[time_name][idx_errors], errors)
+        # we can update the dataframe on the fly
+        df["errors_interp"][idx_errors]=new_errors
+        df["timings_interp"][idx_errors]=time_grid
+    return df
+
+
+def median_convergence_plot(df_conv, type="iterations", err_name="errors", time_name="timings"):
+    """some doc
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        input dataframe with error at each iteration split in rows, see xxx
+        requires timings to be aligned by linear interpolation first.
+    type : string, default "timings"
+        choose if the median is over time or over iterations
+
+    TODO: use another syntax more similar to above?
+    """
+    # we use the groupby function; we will groupy by everything except:
+    # - errors (we want to median them)
+    # - seeds (they don't matter since we use conditional mean over everthing else)
+    # - timings
+    df = df_conv.copy()
+    df.pop("seed")
+    #if type == "timings":
+        ## we store time to put it back at the end
+        #timings_saved = df[time_name] 
+    if type=="iterations":
+        df.pop(time_name) # we always pop time, since we made sure it is aligned with iterations
+    else:
+        df.pop("it")
+    # iterations behave like an index for computing the median
+    df.pop("groups") # good idea?
+
+    namelist = list(df.keys())
+    namelist.remove(err_name)
+
+    df_med = df.groupby(namelist, as_index=False).median() 
+    df_02 = df.groupby(namelist, as_index=False).quantile(q=0.2) 
+    df_08 = df.groupby(namelist, as_index=False).quantile(q=0.8) 
+    df_med["q_errors_p"] = df_08[err_name]-df_med[err_name]
+    df_med["q_errors_m"] = df_med[err_name]-df_02[err_name]
+
+    #if type=="timings":
+        #df_med[time_name] = timings_saved
+
+    return df_med#, df_time.groupby(namelist_time).median()

@@ -16,7 +16,7 @@ assert scores_time[0,0] == 2.
 
 # Testing df_to_convergence_df
 df2 = df_to_convergence_df(df, other_names=["U_lines","ranks_0"], max_time=1.5,
-                            filters={"seed_idx":[0,1], "U_lines":20}, groups=True, groups_names=["U_lines"])
+                            filters={"seed":[0,1], "U_lines":20}, groups=True, groups_names=["U_lines"])
 # another stupid test
 assert len(df2) == 2004
 
@@ -26,3 +26,6 @@ df = error_at_time_or_it(df, time_stamps=[0.1,0.5,1], it_stamps=[0,10,100])
 # Testing regrouping
 df = regroup_columns(df,keys=["ranks"], how_many=3)
 assert df["ranks"][0]==[4,5,6]
+
+# TODO TEST median_plot
+# TODO TEST interpolate

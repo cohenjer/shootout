@@ -7,7 +7,8 @@ import pandas
 from datetime import datetime
 
 def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_store=None,
-                    verbose=True, nb_seeds=1, single_method=True, **kwa):
+                    verbose=True, nb_seeds=1, single_method=True, seeded_fun=False,
+                    **kwa):
     '''
     AMAZING DOCUMENTATION
     Note: outputs must have nbr of algorithm lengths, but inputs can be objectified
@@ -25,6 +26,10 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
     else:
         # TODO Warning
         print("Consider adding algorithm names to benefit from automatic labeling of runs")
+
+    # Don't run anything if seeds are 0
+    if nb_seeds==0:
+        return lambda x: None
 
     def inner_run_and_track(fun):
         # Before all, initialize our storage DataFrame
@@ -61,7 +66,11 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
             # Calling our script with the correct hyperparameters, everything else is defaults
             # User might want several runs for each parameter set (e.g. random initialization inside fun), we do it for him
             for s in range(nb_seeds):
-                outputs = fun(**dic)
+                if seeded_fun:
+                    seeddic = {"seed": s}
+                else:
+                    seeddic = {}
+                outputs = fun(**dic, **seeddic)
                 # we assume outputs is a dictionary
 
                 # Storing all results and parameters in a dataframe
@@ -93,7 +102,8 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
                 if algorithm_names:
                     store_dic.update({"algorithm": algorithm_names})
                 # Storing seed index
-                store_dic.update({"seed_idx": s})
+                #store_dic.update({"seed_idx": s})
+                store_dic.update({"seed": s})
 
 
                 # Now we deal with outputs. 

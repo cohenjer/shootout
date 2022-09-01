@@ -3,10 +3,12 @@ from matplotlib import pyplot as plt # used for concurrent plots, todo go to plo
 import plotly.express as px
 
 
-def plot_speed_comparison(thresh_time, scores_time, thresh_it, scores_it, legend=None, title=None, xlabel="Rec error threshold", ylabel="Number of faster runs"):
+def plot_speed_comparison(thresh_time, scores_time, scores_it, thresh_it=None, legend=None, title=None, xlabel="Rec error threshold", ylabel="Number of faster runs"):
     fig0 = plt.figure()
     plt.subplot(121)
     plt.semilogx(thresh_time, scores_time.T)
+    if not thresh_it:
+        thresh_it = thresh_time
     if legend:
         plt.legend(legend)
     if title:
@@ -30,8 +32,3 @@ def plot_speed_comparison(thresh_time, scores_time, thresh_it, scores_it, legend
 def plot_conv():
     # TODO: subplots with iterations and time
     return
-
-def change_px_fig():
-    # some custom function to modify plotly express plots, because I always forget the correct commands
-    return
-
