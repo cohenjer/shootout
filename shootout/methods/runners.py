@@ -12,6 +12,9 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
     '''
     AMAZING DOCUMENTATION
     Note: outputs must have nbr of algorithm lengths, but inputs can be objectified
+    TODO: better error messages/error catching \
+        - missmatches input names / loop variables
+        - solo fun vs several
     '''
     # Preprocessing: converting any single value in kwa to a singleton list
     # TODO: useful?
@@ -83,7 +86,7 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
                 # Optional manual tracking
                 if add_track:
                     store_dic.update(add_track)
-                # A counterintuitive step is to unbracket all the singleton list parameter values in the dictionary, but split other lists. Indeed, plotly will have to consider these values as objects to store several lines simultaneously, and this does the job efficiently.
+                # A counterintuitive step is to unbracket all the singleton list parameter values in the dictionary, but split other lists. Indeed, pandas will have to consider these values as objects to store several lines simultaneously, and this does the job efficiently.
                 dic_copy = copy.copy(store_dic)
                 # copy to avoid changing the dictionary online, which fails
                 for elem in dic_copy:
@@ -91,7 +94,7 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
                         if len(store_dic[elem])==1:
                             store_dic[elem] = store_dic[elem][0]
                         else:
-                            # we go over all elements of the list and split them in the dictionary
+                            # we go over all elements of the list and split them in the dictionary TODO improve
                             for i in range(len(store_dic[elem])):
                                 store_dic[elem+"_"+str(i)] = store_dic[elem][i]
                             # Then remove the original list

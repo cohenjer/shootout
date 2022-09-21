@@ -136,15 +136,26 @@ def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_n
             flag=1
         if flag:
             its = tl.arange(0,len(i),1)
-            dic = {
-                "it":its,
-                time_name: df.iloc[idx_pd][time_name],
-                err_name:i,
-                algorithm_name:df.iloc[idx_pd][algorithm_name],
-                "seed":df.iloc[idx_pd]["seed"]}
-                # Other custom names to store
+            if time_name:
+                dic = {
+                    "it":its,
+                    time_name: df.iloc[idx_pd][time_name],
+                    err_name:i,
+                    algorithm_name:df.iloc[idx_pd][algorithm_name],
+                    "seed":df.iloc[idx_pd]["seed"]}
+            else:
+                dic = {
+                    "it":its,
+                    err_name:i,
+                    algorithm_name:df.iloc[idx_pd][algorithm_name],
+                    "seed":df.iloc[idx_pd]["seed"]}
+            # Other custom names to store
             for name in other_names:
-                dic.update({name: df.iloc[idx_pd][name]})
+                ## filter if object or not TODO
+                #if type(df.iloc[idx_pd][name])==list:
+                #    dic.update({name: [df.iloc[idx_pd][name]]}) # objectified
+                #else:
+                dic.update({name: df.iloc[idx_pd][name]}) 
             df2=pd.concat([df2, pd.DataFrame(dic)], ignore_index=True)
 
     # cutting time for more regular plots
@@ -187,19 +198,26 @@ def error_at_time_or_it(df, time_stamps=None, it_stamps=None, err_name="errors",
         df["err_at_it_"+str(it)] = store_list
     return df
             
-def regroup_columns(df,keys=None, how_many=None):
+def regroup_columns(df,keys=None, how_many=None, textify=True):
     """
     Because we split input lists in DataFrames for storage, it may be convenient to re-introduce the original lists as columns on user demand.
     Keys is the list of strings of names of the form foo_n where foo is in keys and n is an integer.
     How many tells the upper bound on n.
+    Textify makes strings inputs instead of list of integers because this makes life 8 times easier with Pandas and Plotly.
+    TODO support single input for keys instead of list
     """
     for name in keys:
         df[name] = pd.Series([[] for i in range(len(df))])
         for j in range(len(df)):
-            df[name][j] = [df[name+"_"+str(i)][j] for i in range(how_many)]
+            if textify:
+                df[name][j] = str([df[name+"_"+str(i)][j] for i in range(how_many)])
+            else: 
+                df[name][j] = [df[name+"_"+str(i)][j] for i in range(how_many)]
+        # then we remove the columns that were merged
+        df = df.drop([name+"_"+str(i) for i in range(how_many)], axis=1)    
     return df
 
-def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, logtime=False, npoints=500):
+def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, logtime=False, npoints=500, adaptive_grid=False):
     """
     some doc
 
@@ -213,30 +231,61 @@ def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, 
         choose if interpolation grid is linear (False) or logarithmic (True). Set to True when timings are very different between several runs.
     npoints : int, default 500
         number of iterpolation points.
+    adaptive_grid : bool, default False
+        determines if each test condition has its own time grid. If True, a dirty BAD hack is used: shootout runs samples in most intern loop, therefore we can compute grids for each block of rows in df cut according to periodicity of seed.
     """
-    # First we look for the k-th max timing over all runs
-    maxtime_list = []
-    for timings in df[time_name]:
-        maxtime_list.append(timings[-1])
-    kmaxtime = np.sort(maxtime_list)[-1-k]
-    # then we create a grid based on that time
-    if logtime:
-        time_grid = np.logspace(0, kmaxtime, npoints)
+    # Check if grid is individual or global
+    if adaptive_grid: # same grid for each algorithm --> TODO change?
+        # empty columns for init
+        df["errors_interp"] = df[err_name]
+        df["timings_interp"] = df[time_name]
+        # We work on blocks of df cut according to seed periodicity
+        nb_algs = len(np.unique(df["algorithm"]))
+        seed_periodicity = (df["seed"].max() + 1)*nb_algs
+        nb_rows = len(df)
+        nb_blocks = int(nb_rows/seed_periodicity)
+        for block_idx in range(nb_blocks):
+            maxtime_list = []
+            #print(seed_periodicity*block_idx,seed_periodicity*(block_idx+1)) # TODO remove
+            for row in df[time_name][seed_periodicity*block_idx:seed_periodicity*(block_idx+1)]: # todo check indices
+                maxtime_list.append(row[-1])
+            maxtime = np.sort(maxtime_list)[-1]
+            # then we create a grid
+            if logtime:
+                time_grid = np.logspace(0, np.log10(maxtime), npoints)
+            else:
+                time_grid = np.linspace(0, maxtime, npoints)
+            # now we populate the time column for the block and interpolate
+            for idx in range(seed_periodicity*block_idx, seed_periodicity*(block_idx+1)):
+                df["timings_interp"][idx] = time_grid
+                new_errors = np.interp(time_grid, df[time_name][idx], df[err_name][idx])
+                df["errors_interp"][idx]=new_errors
+
     else:
-        time_grid = np.linspace(0, kmaxtime, npoints)
-    # creating dummy columns
-    df["errors_interp"] = df[err_name]
-    df["timings_interp"] = df[time_name]
-    # now we interpolate each error on that grid
-    for idx_errors, errors in enumerate(df[err_name]):
-        new_errors = np.interp(time_grid, df[time_name][idx_errors], errors)
-        # we can update the dataframe on the fly
-        df["errors_interp"][idx_errors]=new_errors
-        df["timings_interp"][idx_errors]=time_grid
+        # First we look for the k-th max timing over all runs
+        maxtime_list = []
+        for timings in df[time_name]:
+            maxtime_list.append(timings[-1])
+        kmaxtime = np.sort(maxtime_list)[-1-k]
+        # then we create a grid based on that time
+        if logtime:
+            time_grid = np.logspace(0, np.log10(kmaxtime), npoints)
+        else:
+            time_grid = np.linspace(0, kmaxtime, npoints)
+        # creating dummy columns
+        df["errors_interp"] = df[err_name]
+        df["timings_interp"] = df[time_name]
+        # now we interpolate each error on that grid
+        for idx_errors, errors in enumerate(df[err_name]):
+            new_errors = np.interp(time_grid, df[time_name][idx_errors], errors)
+            # we can update the dataframe on the fly
+            df["errors_interp"][idx_errors]=new_errors
+            df["timings_interp"][idx_errors]=time_grid
+
     return df
 
 
-def median_convergence_plot(df_conv, type="iterations", err_name="errors", time_name="timings"):
+def median_convergence_plot(df_conv, type="iterations", err_name="errors", time_name="timings", mean=False):
     """some doc
 
     Parameters
@@ -251,7 +300,7 @@ def median_convergence_plot(df_conv, type="iterations", err_name="errors", time_
     """
     # we use the groupby function; we will groupy by everything except:
     # - errors (we want to median them)
-    # - seeds (they don't matter since we use conditional mean over everthing else)
+    # - seeds (they don't matter since we use conditional mean over everything else)
     # - timings
     df = df_conv.copy()
     df.pop("seed")
@@ -260,15 +309,20 @@ def median_convergence_plot(df_conv, type="iterations", err_name="errors", time_
         #timings_saved = df[time_name] 
     if type=="iterations":
         df.pop(time_name) # we always pop time, since we made sure it is aligned with iterations
-    else:
+    elif type=="timings":
         df.pop("it")
+    # else do nothing
+
     # iterations behave like an index for computing the median
     df.pop("groups") # good idea?
 
     namelist = list(df.keys())
     namelist.remove(err_name)
 
-    df_med = df.groupby(namelist, as_index=False).median() 
+    if mean:
+        df_med = df.groupby(namelist, as_index=False).mean() 
+    else:
+        df_med = df.groupby(namelist, as_index=False).median() 
     df_02 = df.groupby(namelist, as_index=False).quantile(q=0.2) 
     df_08 = df.groupby(namelist, as_index=False).quantile(q=0.8) 
     df_med["q_errors_p"] = df_08[err_name]-df_med[err_name]
