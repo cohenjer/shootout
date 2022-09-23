@@ -36,6 +36,8 @@ def find_best_at_all_thresh(df, thresh, batch_size, err_name="errors", time_name
 
     scores_it: nd array
             A table "method x thresh" with how many times each method was the fastest to reach a given threshold. Here faster is understood in number of iterations.
+    
+    TODO: remove batch parameter/provide clever default
     """
 
     timings = []
