@@ -9,13 +9,71 @@ from datetime import datetime
 def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_store=None,
                     verbose=True, nb_seeds=1, single_method=True, seeded_fun=False,
                     **kwa):
-    '''
-    AMAZING DOCUMENTATION
+    """ This function is the main ingredient of shootout. It is meant to be used as a decorator, to run a python function "my_script" with a set of inputs to grid on. The outputs are stored in a pandas DataFrame which is stored locally.
+
+    A toy example:
+    ```python
+    @run_and_track(nb_seeds=5, n=[5,10], m=[4,8])
+    def one_run(n=7, m=9, p=12):
+        return { something: n+m+p }
+    ```
+    will return a dataframe containing four columns "n", "m", "something" and "seed", with 5x2x2 rows (5 runs which are here exactly the same, two values for n and two values for m).    
+    Note that the function should output a dictionary.
+
+    Shootout is designed to make optimization algorithms comparison easier, so the target application is to lift up a code comparing algorithms on single parameter settings to a full comparison and storing all parameters and results.
+
+    In the case of a single algorithm to run with several hyperparameters, the syntax looks like this:
+    ```python
+    @run_and_track(nb_seeds=10, algorithm_names=['My favorite Algorithm'], seeded_fun=True, hyperparameter=[0.1,1,10])
+    def my_script(n=10, m=10, hyperparameter=0, seed=0):
+        # some random generation using seed, e.g. with numpy randomstate
+        # seed will be populated by numbers from 0 to nb_seeds
+        # and hyperparameter with 0.1, 1 and 10
+        errors, timings, anything_else = my_algorithm(random_data,n,m,hyperparameter)
+        return {"errors": errors, "timings": timings}
+    ```
+    where errors and timings must have the same length.
+    
+    For several algorithms, say two, the syntax is similar but slightly different:
+    ```python
+    @run_and_track(nb_seeds=10, algorithm_names=['My Favorite Algorithm', 'my annoying competitor'], seeded_fun=True, hyperparameter=[0.1,1,10])
+    def my_script(n=10, m=10, hyperparameter=0, seed=0):
+        # some random generation using seed, e.g. with numpy randomstate
+        # seed will be populated by numbers from 0 to nb_seeds
+        # and hyperparameter with 0.1, 1 and 10
+        errors, timings, anything_else = my_algorithm(random_data,n,m,hyperparameter)
+        errors2, timings2, anything_else2 = my_competitor(random_data,n,m,hyperparameter)
+        return {"errors": [errors, errors2], "timings": [timings, timings2]}
+    ```
+    The naming of the inputs and outputs is completely free. However, naming errors/loss/utility collected in a list exactly "errors", and time (starting from 0) at each iteration "timings" will allow for immediate processing with utilities from shootout, which will for instance facilitate plotting convergence curves.
+
+    Parameters
+    ----------
+    add_track : dictionary, optional
+        a dictionary of values to store manually. The inputs and outputs are stored anyway so this option should be avoided if possible. By default None
+    algorithm_names : list, optional
+        provide a list of name for each algorithm that will be run in the script. The names should match the outputs of the script if the outputs are lists (same size and order). Using this input is recommended for easily naming plots in post-processing stages. By default None
+    path_store : string, optional
+        the path (relative or absolute) to the directory where the DataFrame will be stored, by default None, and default directory is the current working directory.
+    name_store : string, optional
+        name of the file containing the DataFrame, by default None and the default name is the date in long format.
+    verbose : bool, optional
+        choose wether run_and_track prints its progress, by default True
+    nb_seeds : int, optional
+        number of times each set of parameters is used to run the script. Seed index will be stored in the DataFrame. By default 1.
+    single_method : bool, optional
+        Set this to False if you are running several algorithm (i.e. outputs is a dictionary of lists) and you do not want to input algorithm_names, by default True.
+    seeded_fun : bool, optional
+        Set to True if the script is using random generation and you want to use the seed index to trigger the random generator. By default False
+    **kwa: any input of the script decorated by run_and_track that should be redefined, see examples above and in the example gallery.
+
+
     Note: outputs must have nbr of algorithm lengths, but inputs can be objectified
     TODO: better error messages/error catching \
         - missmatches input names / loop variables
         - solo fun vs several
-    '''
+        - algorithm_names length does not match outputs
+    """
     # Preprocessing: converting any single value in kwa to a singleton list
     # TODO: useful?
     for i in kwa:
