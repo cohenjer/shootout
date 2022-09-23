@@ -64,7 +64,7 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
     single_method : bool, optional
         Set this to False if you are running several algorithm (i.e. outputs is a dictionary of lists) and you do not want to input algorithm_names, by default True.
     seeded_fun : bool, optional
-        Set to True if the script is using random generation and you want to use the seed index to trigger the random generator. By default False
+        Set to True if the script is using random generation and you want to use the seed index to trigger the random generator. In that case, the wrapped script must use "seed=xxx" in its signature, where xxx does not matter. By default False
     **kwa: any input of the script decorated by run_and_track that should be redefined, see examples above and in the example gallery.
 
 
