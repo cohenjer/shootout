@@ -217,7 +217,7 @@ def regroup_columns(df,keys=None, how_many=None, textify=True):
         df = df.drop([name+"_"+str(i) for i in range(how_many)], axis=1)    
     return df
 
-def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, logtime=False, npoints=500, adaptive_grid=False):
+def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, logtime=False, npoints=500, adaptive_grid=False, alg_name="algorithm"):
     """
     some doc
 
@@ -233,33 +233,38 @@ def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, 
         number of iterpolation points.
     adaptive_grid : bool, default False
         determines if each test condition has its own time grid. If True, a dirty BAD hack is used: shootout runs samples in most intern loop, therefore we can compute grids for each block of rows in df cut according to periodicity of seed.
+    alg_name : string, default "algorithm"
+        the string value of the key in df that contains the algorithm name.
     """
     # Check if grid is individual or global
-    if adaptive_grid: # same grid for each algorithm --> TODO change?
+    if adaptive_grid:
         # empty columns for init
         df["errors_interp"] = df[err_name]
         df["timings_interp"] = df[time_name]
         # We work on blocks of df cut according to seed periodicity
-        nb_algs = len(np.unique(df["algorithm"]))
+        if alg_name in df.keys():
+            nb_algs = np.maximum(len(np.unique(df["algorithm"])),1) #0 not allowed, in case algorithms are not provided
+        else:
+            nb_algs = 1
         seed_periodicity = (df["seed"].max() + 1)*nb_algs
         nb_rows = len(df)
         nb_blocks = int(nb_rows/seed_periodicity)
         for block_idx in range(nb_blocks):
-            maxtime_list = []
-            #print(seed_periodicity*block_idx,seed_periodicity*(block_idx+1)) # TODO remove
-            for row in df[time_name][seed_periodicity*block_idx:seed_periodicity*(block_idx+1)]: # todo check indices
-                maxtime_list.append(row[-1])
-            maxtime = np.sort(maxtime_list)[-1]
-            # then we create a grid
-            if logtime:
-                time_grid = np.logspace(0, np.log10(maxtime), npoints)
-            else:
-                time_grid = np.linspace(0, maxtime, npoints)
-            # now we populate the time column for the block and interpolate
-            for idx in range(seed_periodicity*block_idx, seed_periodicity*(block_idx+1)):
-                df["timings_interp"][idx] = time_grid
-                new_errors = np.interp(time_grid, df[time_name][idx], df[err_name][idx])
-                df["errors_interp"][idx]=new_errors
+            for alg_idx in range(nb_algs):
+                maxtime_list = []
+                for row in df[time_name][seed_periodicity*block_idx+alg_idx:seed_periodicity*(block_idx+1):nb_algs]: # todo check indices
+                    maxtime_list.append(row[-1])
+                maxtime = np.sort(maxtime_list)[-1]
+                # then we create a grid
+                if logtime:
+                    time_grid = np.logspace(0, np.log10(maxtime), npoints)
+                else:
+                    time_grid = np.linspace(0, maxtime, npoints)
+                # now we populate the time column for the block and interpolate
+                for idx in range(seed_periodicity*block_idx+alg_idx, seed_periodicity*(block_idx+1), nb_algs):
+                    df["timings_interp"][idx] = time_grid
+                    new_errors = np.interp(time_grid, df[time_name][idx], df[err_name][idx])
+                    df["errors_interp"][idx]=new_errors
 
     else:
         # First we look for the k-th max timing over all runs
