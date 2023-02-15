@@ -170,6 +170,7 @@ def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_n
         if not groups_names:
             # TODO warning
             print("You asked to group convergence plots together, but no parameter has been provided for grouping.")
+            groups_names = []
         groups_names += ["seed"]
         for name in groups_names:
             zip_arg.append(df2[name])
