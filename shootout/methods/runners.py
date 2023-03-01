@@ -7,7 +7,7 @@ import pandas
 from datetime import datetime
 
 def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_store=None,
-                    verbose=True, nb_seeds=1, single_method=True, seeded_fun=False,
+                    verbose=True, single_method=True, skip=False,
                     **kwa):
     """ This function is the main ingredient of shootout. It is meant to be used as a decorator, to run a python function "my_script" with a set of inputs to grid on. The outputs are stored in a pandas DataFrame which is stored locally.
 
@@ -49,6 +49,33 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
 
     Parameters
     ----------
+    **kwa: dictionary, optional
+        A dictionary containing all the elements in the signature of the function to run. Typically use in the following fashion:
+        `python    
+        vars = dict(
+            {
+                "n": [10,15],
+                "m": [25,30],
+                "noise": 0.25,
+                "r": 3,
+                "seed": [1,2,3,4]
+            }
+        )
+        @run_and_track(**vars)
+        def myalgorithm(**v):
+            xxx = v.n + ...
+        `
+        Note that even if myalgorithm is written for n and m taking integer values, the above code is correct since run_and_track will dispatch the values in the lists in variables to the function upon call. This formalism also makes run_and_track simpler to write and debug.
+        
+        In the old syntax, the user may mismatch the signatures of run_and_track and the runned function
+        as such:
+        `python
+        @run_and_track(n=[10,15], m=[25,30],noise=0.25, add_track={"mytrack":[7,12,20]}, name_store="test-df", nb_seeds=2, algorithm_names=["method1"])
+        def myalgorithm(n=10,m=20,r=3,random=True,noise=0.5):
+            ...
+        `
+        the entries in run_and_track must then be repeated in the function to be run. Note that both methods cannot be combined, so as to promote the use of the first method which is cleaner (all function parameters used for the run will be stored and the variables are not duplicated).
+        By default None.
     add_track : dictionary, optional
         a dictionary of values to store manually. The inputs and outputs are stored anyway so this option should be avoided if possible. By default None
     algorithm_names : list, optional
@@ -59,12 +86,10 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
         name of the file containing the DataFrame, by default None and the default name is the date in long format.
     verbose : bool, optional
         choose wether run_and_track prints its progress, by default True
-    nb_seeds : int, optional
-        number of times each set of parameters is used to run the script. Seed index will be stored in the DataFrame. By default 1.
     single_method : bool, optional
         Set this to False if you are running several algorithm (i.e. outputs is a dictionary of lists) and you do not want to input algorithm_names, by default True.
-    seeded_fun : bool, optional
-        Set to True if the script is using random generation and you want to use the seed index to trigger the random generator. In that case, the wrapped script must use "seed=xxx" in its signature, where xxx does not matter. By default False
+    skip : bool, optional
+        Set to True to skip computations, by default False.
     **kwa: any input of the script decorated by run_and_track that should be redefined, see examples above and in the example gallery.
 
 
@@ -80,6 +105,7 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
         if type(kwa[i])!= list:
             print("Converting single parameter swipe to singleton")
             kwa[i] = [kwa[i]]
+        
 
     if algorithm_names:
         if len(algorithm_names)>1:
@@ -88,32 +114,14 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
         # TODO Warning
         print("Consider adding algorithm names to benefit from automatic labeling of runs")
 
-    # Don't run anything if seeds are 0
-    if nb_seeds==0:
-        return lambda x: None
+    if skip:
+        return # lambda x:None ?
 
     def inner_run_and_track(fun):
         # Before all, initialize our storage DataFrame
         df = pandas.DataFrame()
-
-        # we start by reading kwa contents and match it with inputs
-        inputs = inspect.signature(fun).parameters # Get the default inputs of fun
-        list_param_values = []
-        for name in kwa.keys():
-            if name in inputs.keys():
-                # we will need to loop over this parameter as requested by the user
-                # we use itertools.product to build one big Cartesian product loop, and we add this param to the product
-                list_param_values.append(kwa[name])
-            else:
-                # TODO proper warning
-                print("Input argument {} in run_and_track call not in target script, it is ignored".format(name))
-
-        # we get the unlooped parameters by comparing signature with kwa
-        default_params = []
-        for name in inputs.keys():
-            if name not in kwa.keys():
-                # store these for adding in data frame later
-                default_params.append(name)
+        # New version: kwa of run_and_track must match kwa of function to run
+        list_param_values = [kwa[key] for key in kwa]
 
         # Now we enter the big loop
         for params in itertools.product(*list_param_values):
@@ -125,64 +133,52 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
             for i,elem in enumerate(kwa.keys()):
                 dic[elem] = params[i]
             # Calling our script with the correct hyperparameters, everything else is defaults
-            # User might want several runs for each parameter set (e.g. random initialization inside fun), we do it for him
-            for s in range(nb_seeds):
-                if seeded_fun:
-                    seeddic = {"seed": s}
-                else:
-                    seeddic = {}
-                outputs = fun(**dic, **seeddic)
-                # we assume outputs is a dictionary
+            outputs = fun(**dic)
+            # we assume outputs is a dictionary
 
-                # Storing all results and parameters in a dataframe
-                # This is inputs, outputs (both fixed and variable)
-                store_dic = {}
-                store_dic.update(dic)
-                # we have variable inputs now we add default inputs inferred earlier
-                for name in default_params:
-                    store_dic.update({name:inputs[name].default})
-                # Optional manual tracking
-                if add_track:
-                    store_dic.update(add_track)
-                # A counterintuitive step is to unbracket all the singleton list parameter values in the dictionary, but split other lists. Indeed, pandas will have to consider these values as objects to store several lines simultaneously, and this does the job efficiently.
-                dic_copy = copy.copy(store_dic)
-                # copy to avoid changing the dictionary online, which fails
-                for elem in dic_copy:
-                    if type(store_dic[elem]) == list:
-                        if len(store_dic[elem])==1:
-                            store_dic[elem] = store_dic[elem][0]
-                        else:
-                            # we go over all elements of the list and split them in the dictionary TODO improve
-                            for i in range(len(store_dic[elem])):
-                                store_dic[elem+"_"+str(i)] = store_dic[elem][i]
-                            # Then remove the original list
-                            # Otherwise when creating the DataFrame, we have lists of various sizes in the dic and this is not accepted as input
-                            del store_dic[elem]
-                del dic_copy
-                # A static storage: algorithms name provided by user TODO: better solution? annoying to write names :/
-                if algorithm_names:
-                    store_dic.update({"algorithm": algorithm_names})
-                # Storing seed index
-                #store_dic.update({"seed_idx": s})
-                store_dic.update({"seed": s})
+            # Storing all results and parameters in a dataframe
+            # This is inputs, outputs (both fixed and variable)
+            store_dic = {}
+            store_dic.update(dic)
+            # Optional manual tracking
+            if add_track:
+                store_dic.update(add_track)
+            # A counterintuitive step is to unbracket all the singleton list parameter values in the dictionary, but split other lists. Indeed, pandas will have to consider these values as objects to store several lines simultaneously, and this does the job efficiently.
+            dic_copy = copy.copy(store_dic)
+            # copy to avoid changing the dictionary online, which fails
+            for elem in dic_copy:
+                if type(store_dic[elem]) == list:
+                    if len(store_dic[elem])==1:
+                        store_dic[elem] = store_dic[elem][0]
+                    else:
+                        # we go over all elements of the list and split them in the dictionary TODO improve
+                        for i in range(len(store_dic[elem])):
+                            store_dic[elem+"_"+str(i)] = store_dic[elem][i]
+                        # Then remove the original list
+                        # Otherwise when creating the DataFrame, we have lists of various sizes in the dic and this is not accepted as input
+                        del store_dic[elem]
+            del dic_copy
+            # A static storage: algorithms name provided by user TODO: better solution? annoying to write names :/
+            if algorithm_names:
+                store_dic.update({"algorithm": algorithm_names})
 
 
-                # Now we deal with outputs. 
-                # They are trickier because we would like to point out errors(per iteration) and time(per iteration)
-                # we must also record an output per algorithm, ie. get the name of the algorithms
-                # Thus we make some assumptions on the outputs
-                # 1. outputs is one dictionary
-                # 2. the error, timing and any other alg. dependent quantity must be inside list of same length
-                # For a single run, we allow the user to simply provide anything that will be added as an object to the df
-                if single_method:
-                    for elem in outputs:
-                        outputs[elem] = [outputs[elem]] # double bracket makes pandas objectify this
-                store_dic.update(outputs)
+            # Now we deal with outputs. 
+            # They are trickier because we would like to point out errors(per iteration) and time(per iteration)
+            # we must also record an output per algorithm, ie. get the name of the algorithms
+            # Thus we make some assumptions on the outputs
+            # 1. outputs is one dictionary
+            # 2. the error, timing and any other alg. dependent quantity must be inside list of same length
+            # For a single run, we allow the user to simply provide anything that will be added as an object to the df
+            if single_method:
+                for elem in outputs:
+                    outputs[elem] = [outputs[elem]] # double bracket makes pandas objectify this
+            store_dic.update(outputs)
 
-                # We can finally update the pandas DataFrame with all the run information
-                # A temporary DataFrame without outputs
-                df_temp = pandas.DataFrame(store_dic)
-                df= pandas.concat([df,df_temp], ignore_index=True)
+            # We can finally update the pandas DataFrame with all the run information
+            # A temporary DataFrame without outputs
+            df_temp = pandas.DataFrame(store_dic)
+            df= pandas.concat([df,df_temp], ignore_index=True)
 
         # To store the dataframe, we use the provided path, otherwise we place at runpath
         if path_store:
