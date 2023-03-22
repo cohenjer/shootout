@@ -116,49 +116,42 @@ def my_argmin(a):
     return myargmin
 
 
-def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_name="algorithm", other_names=None, max_time=np.Inf, groups=False, groups_names=None, filters=None):
+def df_to_convergence_df(df_in, err_name="errors", time_name="timings", algorithm_name="algorithm", other_names=None, max_time=np.Inf, groups=False, groups_names=None, filters=None):
     # Plotting a few curves for all methods
 
+    # First, we filter undesired rows
+    df = df_in # potentially bad to copy. TODO Better solution
+    if filters:
+        for key in filters:
+            df = df[df[key]==filters[key]]
+    # sort by algorithm name to avoid issues with lines ordering in plotly
+    df = df.sort_values("algorithm")
     # We start by creating a new dataframe in long format (one error per row instead of storing list)
     df2 = pd.DataFrame()
     # exploring the errors one by one
     for idx_pd,i in enumerate(df[err_name]):
-        # filters including seeds
-        if filters:
-            flag=1
-            for cond in filters:
-                # filters entries can be lists or floats/ints. two different behaviors.
-                if type(filters[cond])==list:
-                    if df.iloc[idx_pd][cond] not in filters[cond]:
-                        flag = 0
-                else:
-                    if df.iloc[idx_pd][cond]!=filters[cond]:
-                        flag = 0
+        its = tl.arange(0,len(i),1)
+        if time_name:
+            dic = {
+                "it":its,
+                time_name: df.iloc[idx_pd][time_name],
+                err_name:i,
+                algorithm_name:df.iloc[idx_pd][algorithm_name],
+                "seed":df.iloc[idx_pd]["seed"]}
         else:
-            flag=1
-        if flag:
-            its = tl.arange(0,len(i),1)
-            if time_name:
-                dic = {
-                    "it":its,
-                    time_name: df.iloc[idx_pd][time_name],
-                    err_name:i,
-                    algorithm_name:df.iloc[idx_pd][algorithm_name],
-                    "seed":df.iloc[idx_pd]["seed"]}
-            else:
-                dic = {
-                    "it":its,
-                    err_name:i,
-                    algorithm_name:df.iloc[idx_pd][algorithm_name],
-                    "seed":df.iloc[idx_pd]["seed"]}
-            # Other custom names to store
-            for name in other_names:
-                ## filter if object or not TODO
-                #if type(df.iloc[idx_pd][name])==list:
-                #    dic.update({name: [df.iloc[idx_pd][name]]}) # objectified
-                #else:
-                dic.update({name: df.iloc[idx_pd][name]}) 
-            df2=pd.concat([df2, pd.DataFrame(dic)], ignore_index=True)
+            dic = {
+                "it":its,
+                err_name:i,
+                algorithm_name:df.iloc[idx_pd][algorithm_name],
+                "seed":df.iloc[idx_pd]["seed"]}
+        # Other custom names to store
+        for name in other_names:
+            ## filter if object or not TODO
+            #if type(df.iloc[idx_pd][name])==list:
+            #    dic.update({name: [df.iloc[idx_pd][name]]}) # objectified
+            #else:
+            dic.update({name: df.iloc[idx_pd][name]}) 
+        df2=pd.concat([df2, pd.DataFrame(dic)], ignore_index=True)
 
     # cutting time for more regular plots
     if max_time:
@@ -223,6 +216,7 @@ def regroup_columns(df,keys=None, how_many=None, textify=True):
 def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, logtime=False, npoints=500, adaptive_grid=False, alg_name="algorithm"):
     """
     some doc
+    !! requires a certain ordering of the dataframe
 
     Parameters
     ----------
