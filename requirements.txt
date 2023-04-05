@@ -1,4 +1,3 @@
-tensorly
 numpy
 plotly
 kaleido

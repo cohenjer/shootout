@@ -14,8 +14,8 @@ if os.path.isfile(requirementPath):
 
 setuptools.setup(
       name='shootout',
-      version='0.0',
-      description='Run algorithms and store and compare their ouputs',
+      version='0.1',
+      description='Run algorithms, store and compare their outputs',
       author='Jeremy E. Cohen',
       author_email='jeremy.cohen@cnrs.fr',
       license='MIT',

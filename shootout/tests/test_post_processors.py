@@ -1,8 +1,11 @@
-from shootout.methods.post_processors import error_at_time_or_it, df_to_convergence_df, find_best_at_all_thresh, regroup_columns, interpolate_time_and_error, median_convergence_plot
+from shootout.methods.post_processors import nearest_neighbors_err_at_time_or_it, df_to_convergence_df, find_best_at_all_thresh, regroup_columns, interpolate_time_and_error, median_convergence_plot
 import pandas as pd
 import numpy as np
+import os
 
-df = pd.read_pickle("run-example")
+path = os.path.dirname(__file__)
+df = pd.read_pickle(path+"/run-example")
+
 def test_find_best_at_all_thresh(df=df):
     thresh = np.logspace(5,2,50) 
     scores_time, scores_it, timings, iterations = find_best_at_all_thresh(df,thresh, 2)
@@ -18,8 +21,8 @@ def test_df_to_convergence_df(df=df):
     assert len(df2) == 410
 
 # Testing err_at_time_or_it
-def test_error_at_time_or_it(df=df):
-    df = error_at_time_or_it(df, time_stamps=[0.1,0.5,1], it_stamps=[0,10,40])
+def test_nearest_neighbors_err_at_time_or_it(df=df):
+    df = nearest_neighbors_err_at_time_or_it(df, time_stamps=[0.1,0.5,1], it_stamps=[0,10,40])
     assert df["err_at_time_1"][0]<1.132584e-7 and df["err_at_time_1"][0]>1.132582e-7
 
 # Testing regrouping
@@ -42,6 +45,6 @@ def test_median_convergence_plot(df=df):
     df_l2_conv = df_l2_conv.rename(columns={"timings_interp": "timings", "errors_interp": "errors"})
     df_l2_conv_it = df_to_convergence_df(df, groups=True, groups_names=[], other_names=[],
                                 filters={"loss":"l2"})
-    df_l2_conv_median_time = median_convergence_plot(df_l2_conv, type="timings")
-    df_l2_conv_median_it = median_convergence_plot(df_l2_conv_it, type="iterations")
+    df_l2_conv_median_time = median_convergence_plot(df_l2_conv, type_x="timings")
+    df_l2_conv_median_it = median_convergence_plot(df_l2_conv_it, type_x="iterations")
     assert 1.15e-8<df_l2_conv_median_it["q_errors_p"][0]<1.17e-8 and 1.4e-10<df_l2_conv_median_time["q_errors_p"][0]<1.41e-10

@@ -1,15 +1,20 @@
 # A first test for my shoot-out decorators
-import inspect
 import itertools
 import copy
 import os
 import pandas
 from datetime import datetime
+from shootout.methods.post_processors import regroup_columns
 
 def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_store=None,
                     verbose=True, single_method=True, skip=False,
                     **kwa):
     """ This function is the main ingredient of shootout. It is meant to be used as a decorator, to run a python function "my_script" with a set of inputs to grid on. The outputs are stored in a pandas DataFrame which is stored locally.
+
+    A few restrictions are placed on the wrapped function:
+        1. outputs is one dictionary
+        2. the error, timing and any other alg. dependent quantity must be inside list of same length
+    In single_method mode, 2. is not applied. We allow the user to simply provide anything that will be added as an object to the df.
 
     A toy example:
     ```python
@@ -24,19 +29,19 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
 
     In the case of a single algorithm to run with several hyperparameters, the syntax looks like this:
     ```python
-    @run_and_track(nb_seeds=10, algorithm_names=['My favorite Algorithm'], seeded_fun=True, hyperparameter=[0.1,1,10])
+    @run_and_track(algorithm_names=['My favorite Algorithm'], hyperparameter=[0.1,1,10], seed=[1,15,975])
     def my_script(n=10, m=10, hyperparameter=0, seed=0):
         # some random generation using seed, e.g. with numpy randomstate
-        # seed will be populated by numbers from 0 to nb_seeds
+        # seed will be populated by numbers in the seed list
         # and hyperparameter with 0.1, 1 and 10
         errors, timings, anything_else = my_algorithm(random_data,n,m,hyperparameter)
         return {"errors": errors, "timings": timings}
     ```
     where errors and timings must have the same length.
     
-    For several algorithms, say two, the syntax is similar but slightly different:
+    For several algorithms, say two, the syntax for the `my_script` function is similar but slightly different:
     ```python
-    @run_and_track(nb_seeds=10, algorithm_names=['My Favorite Algorithm', 'my annoying competitor'], seeded_fun=True, hyperparameter=[0.1,1,10])
+    @run_and_track(algorithm_names=['My Favorite Algorithm', 'my annoying competitor'], seed=[1,17,597], hyperparameter=[0.1,1,10])
     def my_script(n=10, m=10, hyperparameter=0, seed=0):
         # some random generation using seed, e.g. with numpy randomstate
         # seed will be populated by numbers from 0 to nb_seeds
@@ -45,7 +50,9 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
         errors2, timings2, anything_else2 = my_competitor(random_data,n,m,hyperparameter)
         return {"errors": [errors, errors2], "timings": [timings, timings2]}
     ```
-    The naming of the inputs and outputs is completely free. However, naming errors/loss/utility collected in a list exactly "errors", and time (starting from 0) at each iteration "timings" will allow for immediate processing with utilities from shootout, which will for instance facilitate plotting convergence curves.
+    The naming of the inputs and outputs is completely free. However, naming errors/loss/utility collected in a list exactly "errors", and time (starting from 0) at each iteration "timings" will allow for immediate processing with utilities from shootout, which e.g. facilitate plotting convergence curves.
+
+    The recommended syntax when many parameters are involved is to define all the parameters in a dictionary, see **kwa below. For the signature of the inner function, one should also use a dictionary that makes use of the same keys.
 
     Parameters
     ----------
@@ -63,14 +70,11 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
         )
         @run_and_track(**vars)
         def myalgorithm(**v):
-            xxx = v.n + ...
+            xxx = v["n"] + ...
         `
-        Note that even if myalgorithm is written for n and m taking integer values, the above code is correct since run_and_track will dispatch the values in the lists in variables to the function upon call. This formalism also makes run_and_track simpler to write and debug.
-        
-        In the old syntax, the user may mismatch the signatures of run_and_track and the runned function
-        as such:
+        Another syntax is tolerated although not recommended, where the user may mismatch the signatures of run_and_track and the runned function as such:
         `python
-        @run_and_track(n=[10,15], m=[25,30],noise=0.25, add_track={"mytrack":[7,12,20]}, name_store="test-df", nb_seeds=2, algorithm_names=["method1"])
+        @run_and_track(n=[10,15], m=[25,30], noise=0.25, add_track={"mytrack":[7,12,20]}, name_store="test-df", nb_seeds=2, algorithm_names=["method1"])
         def myalgorithm(n=10,m=20,r=3,random=True,noise=0.5):
             ...
         `
@@ -87,11 +91,9 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
     verbose : bool, optional
         choose wether run_and_track prints its progress, by default True
     single_method : bool, optional
-        Set this to False if you are running several algorithm (i.e. outputs is a dictionary of lists) and you do not want to input algorithm_names, by default True.
+        Set this to False if you are running several algorithm (i.e. outputs is a dictionary of lists) and you do not want to input algorithm_names. The method will automatically detect is several algorithms are used by counting the length of algorithm names, by default True.
     skip : bool, optional
         Set to True to skip computations, by default False.
-    **kwa: any input of the script decorated by run_and_track that should be redefined, see examples above and in the example gallery.
-
 
     Note: outputs must have nbr of algorithm lengths, but inputs can be objectified
     TODO: better error messages/error catching \
@@ -100,12 +102,18 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
         - algorithm_names length does not match outputs
     """
     # Preprocessing: converting any single value in kwa to a singleton list
-    # TODO: useful?
+    # also tracking names of list parameters for rebuilding columns
+    list_params_keys = []
+    list_params_lengths = []
     for i in kwa:
         if type(kwa[i])!= list:
-            print("Converting single parameter swipe to singleton")
+            #print("Converting single parameter swipe to singleton")
             kwa[i] = [kwa[i]]
-        
+        else:
+            # get length of items in the list
+            if type(kwa[i][0])==list:
+                list_params_keys.append(i)
+                list_params_lengths.append(len(kwa[i][0]))
 
     if algorithm_names:
         if len(algorithm_names)>1:
@@ -115,26 +123,25 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
         print("Consider adding algorithm names to benefit from automatic labeling of runs")
 
     if skip:
-        return # lambda x:None ?
+        return
 
     def inner_run_and_track(fun):
         # Before all, initialize our storage DataFrame
         df = pandas.DataFrame()
-        # New version: kwa of run_and_track must match kwa of function to run
-        list_param_values = [kwa[key] for key in kwa]
 
         # Now we enter the big loop
-        for params in itertools.product(*list_param_values):
+        for params in itertools.product(*[kwa[key] for key in kwa]):
             # Discrete printing for following the run
             if verbose:
-                print("Params values are currently: {}".format(params))
+                print(f"Params values are currently:")
+                for i,key in enumerate(kwa):
+                    print("   ", key+":", params[i])
             # params are not a dictionary so we make function read them by building a dictionary
             dic = kwa
             for i,elem in enumerate(kwa.keys()):
                 dic[elem] = params[i]
             # Calling our script with the correct hyperparameters, everything else is defaults
             outputs = fun(**dic)
-            # we assume outputs is a dictionary
 
             # Storing all results and parameters in a dataframe
             # This is inputs, outputs (both fixed and variable)
@@ -158,27 +165,22 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
                         # Otherwise when creating the DataFrame, we have lists of various sizes in the dic and this is not accepted as input
                         del store_dic[elem]
             del dic_copy
-            # A static storage: algorithms name provided by user TODO: better solution? annoying to write names :/
             if algorithm_names:
                 store_dic.update({"algorithm": algorithm_names})
 
-
-            # Now we deal with outputs. 
-            # They are trickier because we would like to point out errors(per iteration) and time(per iteration)
-            # we must also record an output per algorithm, ie. get the name of the algorithms
-            # Thus we make some assumptions on the outputs
-            # 1. outputs is one dictionary
-            # 2. the error, timing and any other alg. dependent quantity must be inside list of same length
-            # For a single run, we allow the user to simply provide anything that will be added as an object to the df
             if single_method:
                 for elem in outputs:
                     outputs[elem] = [outputs[elem]] # double bracket makes pandas objectify this
             store_dic.update(outputs)
 
             # We can finally update the pandas DataFrame with all the run information
-            # A temporary DataFrame without outputs
             df_temp = pandas.DataFrame(store_dic)
             df= pandas.concat([df,df_temp], ignore_index=True)
+
+        # update dataframe to reconstruct the input lists as true lists
+        print(list_params_keys,list_params_lengths)
+        for i in range(len(list_params_keys)):
+            df = regroup_columns(df, keys=list_params_keys[i], how_many=list_params_lengths[i])
 
         # To store the dataframe, we use the provided path, otherwise we place at runpath
         if path_store:
@@ -191,4 +193,4 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
             path_store_full += "run-{}".format(datetime.today().strftime('%Y-%m-%d_%H-%M'))
         df.to_pickle(path_store_full)
         return fun # This is what the wrapped function will actually be
-    return inner_run_and_track # This is the nature of wrapper(nanana)(.) map. Parameters in kwargs and args can parameterize the inner call
+    return inner_run_and_track

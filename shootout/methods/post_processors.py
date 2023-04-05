@@ -3,16 +3,13 @@
 # - build new df for convergence plots
 # - build scores for comparison plots
 
-# I use tensorly to be backend agnostic
-import tensorly as tl
 import pandas as pd
-# for internal stuff
 import numpy as np
 pd.options.mode.chained_assignment = None  # default='warn'
 
 def find_best_at_all_thresh(df, thresh, batch_size, err_name="errors", time_name="timings"):
     """
-    This utility function find the method was the fastest to reach a given threshold, at each threshold in the list thres.
+    This utility function finds the method was the fastest to reach a given threshold, at each threshold in the list thres.
 
     Parameters:
     ----------
@@ -58,21 +55,21 @@ def find_best_at_all_thresh(df, thresh, batch_size, err_name="errors", time_name
             it_reached = it_reached +( (len(thresh)-len(it_reached))*[np.Inf] )
         timings.append(time_reached)
         iterations.append(it_reached)
-    # casting as a tl tensor (matrix) for slicing vertically
-    timings = tl.tensor(timings)
-    iterations = tl.tensor(iterations)
+    # casting as a numpy array (matrix) for slicing vertically
+    timings = np.array(timings)
+    iterations = np.array(iterations)
 
     # Then we find who is the winner for each batch and for each threshold
     Nb_batch = int(len(timings)/batch_size)  # should be integer without recast
     # reshaping timings into a 3-way tensor for broadcasting numpy argmax
-    timings = tl.reshape(timings, [Nb_batch,batch_size,len(thresh)])
-    iterations = tl.reshape(iterations, [Nb_batch,batch_size,len(thresh)])
+    timings = np.reshape(timings, [Nb_batch,batch_size,len(thresh)])
+    iterations = np.reshape(iterations, [Nb_batch,batch_size,len(thresh)])
     # we can now find which count how many times each algorithm was faster by finding the index of the fastest method for each batch
     winners_time = my_argmin(timings)
     winners_it = my_argmin(iterations)
     # Assuming results are stored always in the same order, a batch row index corresponds to an algorithm name
-    scores_time = tl.zeros((batch_size,len(thresh)))
-    scores_it = tl.zeros((batch_size,len(thresh)))
+    scores_time = np.zeros((batch_size,len(thresh)))
+    scores_it = np.zeros((batch_size,len(thresh)))
     for k in range(batch_size):
         for i in range(Nb_batch): 
             for j in range(len(thresh)):
@@ -97,11 +94,10 @@ def my_argmin(a):
     argmin but returns list of equal indices. Axis must be 1, a is a third order tensor.
     """
     tutu = a.min(axis=1)[:,None]
-    tutu[tutu==np.Inf]=0 #removing tl.inf
+    tutu[tutu==np.Inf]=0 #improve? 
     minpos = (a == tutu)
-    # TODO: remove np.Inf counting
-    tlargmin = tl.argmin(a,axis=1)
-    myargmin= tl.zeros(tlargmin.shape, dtype=object)-1
+    npargmin = np.argmin(a,axis=1)
+    myargmin= np.zeros(npargmin.shape, dtype=object)-1
     for i in range(minpos.shape[0]):
         for j in range(minpos.shape[1]):
             for k in range(minpos.shape[2]):
@@ -137,7 +133,7 @@ def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_n
         else:
             flag=1
         if flag:
-            its = tl.arange(0,len(i),1)
+            its = np.arange(0,len(i),1)
             if time_name:
                 dic = {
                     "it":its,
@@ -178,24 +174,41 @@ def df_to_convergence_df(df, err_name="errors", time_name="timings", algorithm_n
 
     return df2
 
-def error_at_time_or_it(df, time_stamps=None, it_stamps=None, err_name="errors", time_name="timings"):
-    # add to df error for each run at given time stamps in dedicated columns, same for iterations
-    # Since error and time are discrete, this returns a nearest neighbor estimation of the error in the time-space wrt to timings asked by the user.
-    # In particular, for large enough time, error is the final recorded error.
+def nearest_neighbors_err_at_time_or_it(df, time_stamps=None, it_stamps=None, err_name="errors", time_name="timings"):
+    """Adds to dataframe df columns `err_at_time_xx` or `err_at_it_xx` containing an estimation of errors at given time points or iteration values `xx`. The estimation is performed for the `err_at_time_xx` column using the nearest neighbor error value.
+
+    For a more precise interpolation, check out the `interpolate_time_and_error` function.
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        A dataframe containing an `err_name` column and a `time_name` column 
+    time_stamps : list, optional
+        a list of values at which the column `err_name` should be evaluated, by default None
+    it_stamps : list, optional
+        a list of indices at which the column `err_name` should be evaluated, by default None
+    err_name : str, optional
+        the name of the error column in df, by default "errors"
+    time_name : str, optional
+        the name of the timings columns in df, by default "timings"
+
+    Returns
+    -------
+    df: pandas dataframe
+        the input dataframe with appended columns `err_at_time_xx` or `err_at_it_xx`. 
+    """
     for time in time_stamps:
         store_list = []
         for err,timings in list(zip(df[err_name],df[time_name])):
             # find the error for time closest to the desired time
             # better way since sorted?
-            idx_time = tl.argmin(tl.abs(np.add(timings,-time)))
+            idx_time = np.argmin(np.abs(np.add(timings,-time)))
             err_at_time = err[idx_time]
             store_list.append(err_at_time)
         df["err_at_time_"+str(time)] = store_list
     for it in it_stamps:
         store_list = []
         for err in df[err_name]:
-            # find the error for time closest to the desired time
-            # better way since sorted?
             err_at_it = err[it]
             store_list.append(err_at_it)
         df["err_at_it_"+str(it)] = store_list
@@ -204,11 +217,22 @@ def error_at_time_or_it(df, time_stamps=None, it_stamps=None, err_name="errors",
 def regroup_columns(df,keys=None, how_many=None, textify=True):
     """
     Because we split input lists in DataFrames for storage, it may be convenient to re-introduce the original lists as columns on user demand.
-    Keys is the list of strings of names of the form foo_n where foo is in keys and n is an integer.
-    How many tells the upper bound on n.
-    Textify makes strings inputs instead of list of integers because this makes life 8 times easier with Pandas and Plotly.
-    TODO support single input for keys instead of list
+
+    For instance, to grid over a parameter r=[r1,r2,r3] which is naturally represented as a list, in the current version of the shootout toolbox, we are forced to store the results in three columns labeled "r_1", "r_2", "r_3".
+
+    Parameters
+    ----------
+    df: pandas Dataframe
+        a dataframe containing columns to regroup
+    keys: list of strings, or string 
+        a list of column names of the form foo_n where foo is in keys and n is an integer.
+    how_many: int
+        the number of elements that were splitted as dataframe columns
+    textify: bool, optional
+        makes strings inputs instead of list of integers because this makes life 8 times easier with Pandas and Plotly, default True
     """
+    if type(keys)!=list:
+        keys = [keys]
     for name in keys:
         df[name] = pd.Series([[] for i in range(len(df))])
         for j in range(len(df)):
@@ -293,8 +317,10 @@ def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, 
     return df
 
 
-def median_convergence_plot(df_conv, type="iterations", err_name="errors", time_name="timings", mean=False):
+def median_convergence_plot(df_conv, type_x="iterations", err_name="errors", time_name="timings", mean=False):
     """some doc
+
+    TODO: median for regular df?
 
     Parameters
     ----------
@@ -315,17 +341,24 @@ def median_convergence_plot(df_conv, type="iterations", err_name="errors", time_
     #if type == "timings":
         ## we store time to put it back at the end
         #timings_saved = df[time_name] 
-    if type=="iterations":
+    if type_x=="iterations":
         df.pop(time_name) # we always pop time, since we made sure it is aligned with iterations
-    elif type=="timings":
+    elif type_x=="timings":
         df.pop("it")
-    # else do nothing
+    # else pop custom
+    else:
+        df.pop(type_x)
 
     # iterations behave like an index for computing the median
-    df.pop("groups") # good idea?
+    try:
+        df.pop("groups") # good idea?
+    except:
+        pass
 
     namelist = list(df.keys())
     namelist.remove(err_name)
+
+    print(namelist)
 
     if mean:
         df_med = df.groupby(namelist, as_index=False).mean() 

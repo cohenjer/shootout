@@ -4,11 +4,12 @@ import os
 import numpy as np
 
 # Testing run_and_track
-# Not much to test here; just check that a DataFrame is created and that this function runs smoothly
+# check that a DataFrame is created and that this function runs smoothly
 def test_run_and_track_multiple_algs():  
     vars = dict({
         "n": [10,15],
         "m": [25,30],
+        "listpar":[[1,2,3],[4,5,6]],
         "noise": 0.25,
         "r": 3,
         "seed": [1,2]
@@ -22,11 +23,11 @@ def test_run_and_track_multiple_algs():
         return {"errors":[err,err],"timings": [time,time],"myoutput":[h,h],"scalaroutput":7}
     # We check if the dataframe has been created by loading it
     df = pd.read_pickle("test-df")
-    print(df)
     # picking a random element to check
-    assert df["errors"][6][1] == 41
+    assert df["errors"][6][1] == 37
     # deleting temporary df
     os.remove("test-df")
+    #return df
 
 
 # Another test for single algorithm
