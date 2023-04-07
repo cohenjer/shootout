@@ -170,15 +170,25 @@ def df_to_convergence_df(df_in, err_name="errors", time_name="timings", algorith
     """
     # First, we filter undesired rows
     df = df_in.copy() # potentially bad to copy. TODO Better solution
-    if filters:
-        for key in filters:
-            df = df[df[key]==filters[key]]
     # sort by algorithm name to avoid issues with lines ordering in plotly
     df = df.sort_values("algorithm")
-    # We start by creating a new dataframe in long format (one error per row instead of storing list)
     df2 = pd.DataFrame()
+    # Listify filters
+    if filters:
+        for key in filters:
+            if not type(filters[key])==list:
+                filters[key]=[filters[key]]
     # exploring the errors one by one
     for idx_pd,i in enumerate(df[err_name]):
+        # filtering
+        flag = 0
+        for key in filters:
+            if df.iloc[idx_pd][key] not in filters[key]:
+                flag=1
+                break
+        if flag:
+            continue
+        
         its = np.arange(0,len(i),1)
         if time_name:
             dic = {
@@ -188,26 +198,15 @@ def df_to_convergence_df(df_in, err_name="errors", time_name="timings", algorith
                 algorithm_name:df.iloc[idx_pd][algorithm_name],
                 "seed":df.iloc[idx_pd]["seed"]}
         else:
-            flag=1
-        if flag:
-            its = np.arange(0,len(i),1)
-            if time_name:
-                dic = {
-                    "it":its,
-                    time_name: df.iloc[idx_pd][time_name],
-                    err_name:i,
-                    algorithm_name:df.iloc[idx_pd][algorithm_name],
-                    "seed":df.iloc[idx_pd]["seed"]}
-            else:
-                dic = {
-                    "it":its,
-                    err_name:i,
-                    algorithm_name:df.iloc[idx_pd][algorithm_name],
-                    "seed":df.iloc[idx_pd]["seed"]}
+            dic = {
+                "it":its,
+                err_name:i,
+                algorithm_name:df.iloc[idx_pd][algorithm_name],
+                "seed":df.iloc[idx_pd]["seed"]}
             # Other custom names to store
-            for name in other_names:
-                dic.update({name: df.iloc[idx_pd][name]}) 
-            df2=pd.concat([df2, pd.DataFrame(dic)], ignore_index=True)
+        for name in other_names:
+            dic.update({name: df.iloc[idx_pd][name]}) 
+        df2=pd.concat([df2, pd.DataFrame(dic)], ignore_index=True)
 
     # cutting time for more regular plots
     if max_time:
