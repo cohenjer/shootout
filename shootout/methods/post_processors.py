@@ -1,41 +1,40 @@
+import pandas as pd
+import numpy as np
+pd.options.mode.chained_assignment = None  # default='warn'
+
 # todolist:
 # - transform df to add error at timestamps/itstamps
 # - build new df for convergence plots
 # - build scores for comparison plots
 
-import pandas as pd
-import numpy as np
-pd.options.mode.chained_assignment = None  # default='warn'
-
 def find_best_at_all_thresh(df, thresh, batch_size, err_name="errors", time_name="timings"):
     """
     This utility function finds the method was the fastest to reach a given threshold, at each threshold in the list thres.
 
-    Parameters:
-    ----------
+    Parameters
+    -----------
     df : Pandas DataFrame
-         The dataframe containing the errors and timings for each algorithm at each iterations, for several runs.
-         For details on the expected names, check synthetic_comparisons_Frobenius.py
-         Because I am a lazy coder:
+        The dataframe containing the errors and timings for each algorithm at each iterations, for several runs.
+        Because I am a lazy coder:
+
             - Batch size must be constant
             - The algorithms must always be stored in df in the same order
 
     thresh: list
-            A list of thresholds to be used for computing which method was faster.
+        A list of thresholds to be used for computing which method was faster.
 
     batch_size: int
-            Number of algorithm runs to compare for the max pooling. Should be a multiple (typically 1x) of the number of algorithms.
+        Number of algorithm runs to compare for the max pooling. Should be a multiple (typically 1x) of the number of algorithms.
 
-    Returns:
-    -------
+    Returns
+    --------
     scores_time: nd array
-            A table "method x thresh" with how many times each method was the fastest to reach a given threshold. Here faster is understood in runtime.
+        A table (method x thresh) with how many times each method was the fastest to reach a given threshold. Here faster is understood in runtime.
 
     scores_it: nd array
-            A table "method x thresh" with how many times each method was the fastest to reach a given threshold. Here faster is understood in number of iterations.
-    
-    TODO: remove batch parameter/provide clever default
+        A table (method x thresh) with how many times each method was the fastest to reach a given threshold. Here faster is understood in number of iterations.
     """
+    #TODO: remove batch parameter/provide clever default
 
     timings = []
     iterations = []
@@ -113,32 +112,26 @@ def my_argmin(a):
 
 
 def df_to_convergence_df(df_in, err_name="errors", time_name="timings", algorithm_name="algorithm", other_names=None, max_time=np.Inf, groups=True, groups_names=None, filters=None):
-    """Convert a compact Pandas Dataframe with a column ``errors`` containing lists into a long format where these lists are unfolded. This is useful as a post-processor of @run_and_track to be able to easily plot convergence plots with plotly. For instance:
+    """
+    Convert a compact Pandas Dataframe with a column ``errors`` containing lists into a long format where these lists are unfolded. This is useful as a post-processor of @run_and_track to be able to easily plot convergence plots with plotly. For instance using @run_and_track to compute and store results,
 
-    `python
-    
-    # using @run_and_track to compute and store results
-    @run_and_track(n=[1,2],algorithm_names=["goodalg"]):
-    myfun(n=1):
-        costs = [11]
-        time = [0]
-        for i in range(10):
-            # here a dummy cost function over 10 iterations
-            costs.append(10-i)
-            time.append(i)
-        return {"errors": costs, "timings": time}
-
-    # the above code stores the results in a dataframe df
-    df = np.load(...)
-
-    # Now we want to plot errors vs time: we use df_to_convergence_df to convert df into a long format for this
-    vars = ["n"]
-    df_conv = df_to_convergence_df(df, other_names=vars, groups_names=vars)
-
-    # Convergence plots can be easily done with plotly at this stage
-    import plotly.express as px
-    px.line(df,y="errors",x="timings", facet_col="n") 
-    `python
+    >>> @run_and_track(n=[1,2],algorithm_names=["goodalg"]):
+    >>> myfun(n=1):
+    >>>     costs = [11]
+    >>>     time = [0]
+    >>>     for i in range(10):
+    >>>         # here a dummy cost function over 10 iterations
+    >>>         costs.append(10-i)
+    >>>         time.append(i)
+    >>>     return {"errors": costs, "timings": time}
+    >>> # the above code stores the results in a dataframe df
+    >>> df = np.load(...)
+    >>> # Now we want to plot errors vs time: we use df_to_convergence_df to convert df into a long format for this
+    >>> vars = ["n"]
+    >>> df_conv = df_to_convergence_df(df, other_names=vars, groups_names=vars)
+    >>> # Convergence plots can be easily done with plotly at this stage
+    >>> import plotly.express as px
+    >>> px.line(df,y="errors",x="timings", facet_col="n") 
 
     This function will strip all the columns of df which are not error, timings, seed or algorithm_name, and will add an iteration counter. If other columns should be kept, specify their name using the other_names option.
 
@@ -147,11 +140,11 @@ def df_to_convergence_df(df_in, err_name="errors", time_name="timings", algorith
     df_in : pandas dataframe
         A dataframe with lists in columns to be unfolded, typically generated by @run_and_track
     err_name : str, optional
-        specify a different name of the column in df containing the lists to unfold. Can be useful if you custumized the error names, or if several metrics have been stored in df. By default "errors"
+        specify a different name of the column in df containing the lists to unfold. Can be useful if you custumized the error names, or if several metrics have been stored in df. By default ``errors``
     time_name : str, optional
-        specify a different name of the column in df containing the time lists to unfold. Can be useful if you custumized the timings names. By default "timings"
+        specify a different name of the column in df containing the time lists to unfold. Can be useful if you custumized the timings names. By default ``timings``
     algorithm_name : str, optional
-        name of the column containing the algorithm names, by default "algorithm"
+        name of the column containing the algorithm names, by default ``algorithm``
     other_names : list of str, optional
         a list containing the names of columns to keep in the unfolded dataframe, by default None
     max_time : float, optional
@@ -165,7 +158,7 @@ def df_to_convergence_df(df_in, err_name="errors", time_name="timings", algorith
 
     Returns
     -------
-    pandas dataframe
+    df : pandas dataframe
         A new dataframe in a long format with each row containing a single time, iteration, error value, seed and algorithm_name. Easy to use for plotting convergence plots with plotly.
     """
     # First, we filter undesired rows
@@ -228,27 +221,27 @@ def df_to_convergence_df(df_in, err_name="errors", time_name="timings", algorith
     return df2
 
 def nearest_neighbors_err_at_time_or_it(df, time_stamps=None, it_stamps=None, err_name="errors", time_name="timings"):
-    """Adds to dataframe df columns `err_at_time_xx` or `err_at_it_xx` containing an estimation of errors at given time points or iteration values `xx`. The estimation is performed for the `err_at_time_xx` column using the nearest neighbor error value.
+    """Adds to dataframe df columns ``err_at_time_xx`` or ``err_at_it_xx`` containing an estimation of errors at given time points or iteration values ``xx``. The estimation is performed for the ``err_at_time_xx`` column using the nearest neighbor error value.
 
-    For a more precise interpolation, check out the `interpolate_time_and_error` function.
+    For a more precise interpolation, check out the ``interpolate_time_and_error`` function.
 
     Parameters
     ----------
     df : pandas dataframe
-        A dataframe containing an `err_name` column and a `time_name` column 
+        A dataframe containing an ``err_name`` column and a ``time_name`` column 
     time_stamps : list, optional
-        a list of values at which the column `err_name` should be evaluated, by default None
+        a list of values at which the column ``err_name`` should be evaluated, by default None
     it_stamps : list, optional
-        a list of indices at which the column `err_name` should be evaluated, by default None
+        a list of indices at which the column ``err_name`` should be evaluated, by default None
     err_name : str, optional
-        the name of the error column in df, by default "errors"
+        the name of the error column in df, by default ``errors``
     time_name : str, optional
-        the name of the timings columns in df, by default "timings"
+        the name of the timings columns in df, by default ``timings``
 
     Returns
     -------
     df: pandas dataframe
-        the input dataframe with appended columns `err_at_time_xx` or `err_at_it_xx`. 
+        the input dataframe with appended columns ``err_at_time_xx`` or ``err_at_it_xx``. 
     """
     for time in time_stamps:
         store_list = []
@@ -299,8 +292,7 @@ def regroup_columns(df,keys=None, how_many=None, textify=True):
 
 def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, logtime=False, npoints=500, adaptive_grid=False, alg_name="algorithm"):
     """
-    some doc
-    !! requires a certain ordering of the dataframe
+    Interpolates several error curves so that they all lie on the same grid. There is one grid per algorithm name by default. To use with caution as this can significantly bend the error curves.
 
     Parameters
     ----------
@@ -372,20 +364,20 @@ def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, 
 
 
 def median_convergence_plot(df_conv, type_x="iterations", err_name="errors", time_name="timings", mean=False):
-    """some doc
-
-    TODO: median for regular df?
+    """
+    Computes the mean or median of several converge plots with respect to either time or iterations (this is determined by ``type_x``). By mean/median of several curve, we mean the mean/median at each ``type_x`` value.
 
     Parameters
     ----------
     df : pandas dataframe
-        input dataframe with error at each iteration split in rows, see xxx
+        input dataframe with error at each iteration split in rows
         requires timings to be aligned by linear interpolation first.
-    type : string, default "timings"
-        choose if the median is over time or over iterations
-
-    TODO: use another syntax more similar to above?
+    type_x : string, default ``timings``
+        choose if the median is over time or over iterations.
+    means : boolean, default False
+        if True, compute the mean of the curves, otherwise the median is computed.
     """
+    # TODO: use another syntax more similar to above?
     # we use the groupby function; we will groupy by everything except:
     # - errors (we want to median them)
     # - seeds (they don't matter since we use conditional mean over everything else)

@@ -9,75 +9,79 @@ from shootout.methods.post_processors import regroup_columns
 def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_store=None,
                     verbose=True, single_method=True, skip=False,
                     **kwa):
-    """ This function is the main ingredient of shootout. It is meant to be used as a decorator, to run a python function "my_script" with a set of inputs to grid on. The outputs are stored in a pandas DataFrame which is stored locally.
+    """ 
+    This function is the main ingredient of shootout. It is a decorator, to run a python function ``my_script`` with a set of inputs to grid on. The outputs are stored in a pandas DataFrame which is stored locally.
+    
+    Shootout is designed to make optimization algorithms comparison easier, so the target application is to lift up a code comparing algorithms on single parameter settings to a full comparison and storing all parameters and results.
 
     A few restrictions are placed on the wrapped function:
-        1. outputs is one dictionary
-        2. the error, timing and any other alg. dependent quantity must be inside list of same length
+
+        - outputs is one dictionary
+        - the errors, timings and any other algorithm dependent quantity must be inside lists of length the number of algorithms.
+
     In single_method mode, 2. is not applied. We allow the user to simply provide anything that will be added as an object to the df.
 
     A toy example:
-    ```python
-    @run_and_track(nb_seeds=5, n=[5,10], m=[4,8])
-    def one_run(n=7, m=9, p=12):
-        return { something: n+m+p }
-    ```
-    will return a dataframe containing four columns "n", "m", "something" and "seed", with 5x2x2 rows (5 runs which are here exactly the same, two values for n and two values for m).    
+
+    >>> @run_and_track(nb_seeds=5, n=[5,10], m=[4,8])
+    >>> def my_script(n=7, m=9, p=12):
+    >>>     return { "something": n+m+p }
+
+    will return a dataframe containing four columns ``n`` , ``m`` , ``something`` and ``seed`` , with 5x2x2 rows (5 runs which are here exactly the same, two values for n and two values for m).    
     Note that the function should output a dictionary.
 
-    Shootout is designed to make optimization algorithms comparison easier, so the target application is to lift up a code comparing algorithms on single parameter settings to a full comparison and storing all parameters and results.
-
+    **Syntax:**
     In the case of a single algorithm to run with several hyperparameters, the syntax looks like this:
-    ```python
-    @run_and_track(algorithm_names=['My favorite Algorithm'], hyperparameter=[0.1,1,10], seed=[1,15,975])
-    def my_script(n=10, m=10, hyperparameter=0, seed=0):
-        # some random generation using seed, e.g. with numpy randomstate
-        # seed will be populated by numbers in the seed list
-        # and hyperparameter with 0.1, 1 and 10
-        errors, timings, anything_else = my_algorithm(random_data,n,m,hyperparameter)
-        return {"errors": errors, "timings": timings}
-    ```
+    
+    >>> @run_and_track(algorithm_names=['My favorite Algorithm'], hyperparameter=[0.1,1,10], seed=[1,15,975])
+    >>> def my_script(n=10, m=10, hyperparameter=0, seed=0):
+    >>>     # some random generation using seed, e.g. with numpy randomstate
+    >>>     # seed will be populated by numbers in the seed list
+    >>>     # and hyperparameter with 0.1, 1 and 10
+    >>>     errors, timings, anything_else = my_algorithm(random_data,n,m,hyperparameter)
+    >>>     return {"errors": errors, "timings": timings}
+    
     where errors and timings must have the same length.
     
-    For several algorithms, say two, the syntax for the `my_script` function is similar but slightly different:
-    ```python
-    @run_and_track(algorithm_names=['My Favorite Algorithm', 'my annoying competitor'], seed=[1,17,597], hyperparameter=[0.1,1,10])
-    def my_script(n=10, m=10, hyperparameter=0, seed=0):
-        # some random generation using seed, e.g. with numpy randomstate
-        # seed will be populated by numbers from 0 to nb_seeds
-        # and hyperparameter with 0.1, 1 and 10
-        errors, timings, anything_else = my_algorithm(random_data,n,m,hyperparameter)
-        errors2, timings2, anything_else2 = my_competitor(random_data,n,m,hyperparameter)
-        return {"errors": [errors, errors2], "timings": [timings, timings2]}
-    ```
-    The naming of the inputs and outputs is completely free. However, naming errors/loss/utility collected in a list exactly "errors", and time (starting from 0) at each iteration "timings" will allow for immediate processing with utilities from shootout, which e.g. facilitate plotting convergence curves.
+    For several algorithms, say two, the syntax for the returns of ``my_script`` function is similar but slightly different:
+    
+    >>> @run_and_track(algorithm_names=['My Favorite Algorithm', 'my annoying competitor'], seed=[1,17,597], hyperparameter=[0.1,1,10])
+    >>> def my_script(n=10, m=10, hyperparameter=0, seed=0):
+    >>>     # some random generation using seed, e.g. with numpy randomstate
+    >>>     # seed will be populated by numbers from 0 to nb_seeds
+    >>>     # and hyperparameter with 0.1, 1 and 10
+    >>>     errors, timings, anything_else = my_algorithm(random_data,n,m,hyperparameter)
+    >>>     errors2, timings2, anything_else2 = my_competitor(random_data,n,m,hyperparameter)
+    >>>     return {"errors": [errors, errors2], "timings": [timings, timings2]}
 
-    The recommended syntax when many parameters are involved is to define all the parameters in a dictionary, see **kwa below. For the signature of the inner function, one should also use a dictionary that makes use of the same keys.
+    The naming of the inputs and outputs is completely free. However, naming errors/loss/utility collected in a list exactly ``errors`` and ``timings`` (time starting from 0) will allow for immediate processing with utilities from shootout such as plotting convergence curves.
+
+    The recommended syntax when many parameters are involved is to define all the parameters in a dictionary, see ``**kwa`` below. For the signature of the inner function, one should also use a dictionary that makes use of the same keys.
 
     Parameters
     ----------
     **kwa: dictionary, optional
         A dictionary containing all the elements in the signature of the function to run. Typically use in the following fashion:
-        `python    
-        vars = dict(
-            {
-                "n": [10,15],
-                "m": [25,30],
-                "noise": 0.25,
-                "r": 3,
-                "seed": [1,2,3,4]
-            }
-        )
-        @run_and_track(**vars)
-        def myalgorithm(**v):
-            xxx = v["n"] + ...
-        `
-        Another syntax is tolerated although not recommended, where the user may mismatch the signatures of run_and_track and the runned function as such:
-        `python
-        @run_and_track(n=[10,15], m=[25,30], noise=0.25, add_track={"mytrack":[7,12,20]}, name_store="test-df", nb_seeds=2, algorithm_names=["method1"])
-        def myalgorithm(n=10,m=20,r=3,random=True,noise=0.5):
-            ...
-        `
+
+        >>> vars = dict(
+        >>>     {
+        >>>         "n": [10,15],
+        >>>         "m": [25,30],
+        >>>         "noise": 0.25,
+        >>>         "r": 3,
+        >>>         "seed": [1,2,3,4]
+        >>>     }
+        >>> )
+        >>> @run_and_track(**vars)
+        >>> def myalgorithm(**v):
+        >>>     xxx = v["n"] + ...
+        
+        Another syntax is tolerated although not recommended, where the user may mismatch the signatures of "@run_and_track" and the ran function as such:
+
+        >>> @run_and_track(n=[10,15], m=[25,30], noise=0.25, add_track={"mytrack":[7,12,20]}, name_store="test-df", nb_seeds=2, algorithm_names=["method1"])
+        >>> def myalgorithm(n=10,m=20,r=3,random=True,noise=0.5):
+        >>>     ...
+
         the entries in run_and_track must then be repeated in the function to be run. Note that both methods cannot be combined, so as to promote the use of the first method which is cleaner (all function parameters used for the run will be stored and the variables are not duplicated).
         By default None.
     add_track : dictionary, optional
@@ -94,13 +98,11 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
         Set this to False if you are running several algorithm (i.e. outputs is a dictionary of lists) and you do not want to input algorithm_names. The method will automatically detect is several algorithms are used by counting the length of algorithm names, by default True.
     skip : bool, optional
         Set to True to skip computations, by default False.
-
-    Note: outputs must have nbr of algorithm lengths, but inputs can be objectified
-    TODO: better error messages/error catching \
-        - missmatches input names / loop variables
-        - solo fun vs several
-        - algorithm_names length does not match outputs
     """
+    #TODO: better error messages/error catching \
+    #    - missmatches input names / loop variables
+    #    - solo fun vs several
+    #    - algorithm_names length does not match outputs
     # Preprocessing: converting any single value in kwa to a singleton list
     # also tracking names of list parameters for rebuilding columns
     list_params_keys = []
@@ -178,7 +180,6 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
             df= pandas.concat([df,df_temp], ignore_index=True)
 
         # update dataframe to reconstruct the input lists as true lists
-        print(list_params_keys,list_params_lengths)
         for i in range(len(list_params_keys)):
             df = regroup_columns(df, keys=list_params_keys[i], how_many=list_params_lengths[i])
 
