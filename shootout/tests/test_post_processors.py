@@ -1,10 +1,21 @@
-from shootout.methods.post_processors import nearest_neighbors_err_at_time_or_it, df_to_convergence_df, find_best_at_all_thresh, regroup_columns, interpolate_time_and_error, median_convergence_plot
+from shootout.methods.post_processors import nearest_neighbors_err_at_time_or_it, df_to_convergence_df, find_best_at_all_thresh, regroup_columns, interpolate_time_and_error, median_convergence_plot, my_argmin
 import pandas as pd
 import numpy as np
 import os
 
 path = os.path.dirname(__file__)
 df = pd.read_pickle(path+"/run-example")
+
+# TODO: myargmin
+def test_my_argmin():
+    a = np.array([[[1,1],[1,4]],[[5,6],[6,6]]])
+    out = my_argmin(a)
+    assert out[0,0] == [0,1]
+    assert out[0,1] == 0
+    assert out[1,0] == 0
+    assert out[1,1] == [0,1]
+
+# TODO: check that all args are tested
 
 def test_find_best_at_all_thresh(df=df):
     thresh = np.logspace(5,2,50) 
