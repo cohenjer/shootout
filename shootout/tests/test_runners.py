@@ -14,7 +14,7 @@ def test_run_and_track_multiple_algs():
         "r": 3,
         "seed": [1,2]
     })
-    @run_and_track(add_track={"mytrack":[7,12,20]}, name_store="test-df", nb_seeds=2, algorithm_names=["method1","method2"], **vars)
+    @run_and_track(add_track={"mytrack":[7,12,20]}, name_store="test-df", algorithm_names=["method1","method2"], **vars)
     def myalgorithm(**v):
         w = v["m"]+v["n"]+v["r"]+v["noise"]+v["seed"]
         h = [1,2,3,4]
@@ -41,7 +41,7 @@ def test_run_and_track_single_algorithm():
             "random": True
         }
     )
-    @run_and_track(add_track={"mytrack":[7,12,20]}, name_store="test-df", nb_seeds=2, algorithm_names=["method1"], **vars)
+    @run_and_track(add_track={"mytrack":[7,12,20]}, name_store="test-df", algorithm_names=["method1"], **vars)
     def myalgorithm(**v):
         w = v['m']+v['n']+v['r']+v['noise']
         h = np.array([[1,2,3,4],[5,6,7,8]])

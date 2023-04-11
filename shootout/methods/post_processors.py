@@ -174,13 +174,14 @@ def df_to_convergence_df(df_in, err_name="errors", time_name="timings", algorith
     # exploring the errors one by one
     for idx_pd,i in enumerate(df[err_name]):
         # filtering
-        flag = 0
-        for key in filters:
-            if df.iloc[idx_pd][key] not in filters[key]:
-                flag=1
-                break
-        if flag:
-            continue
+        if filters:
+            flag = 0
+            for key in filters:
+                if df.iloc[idx_pd][key] not in filters[key]:
+                    flag=1
+                    break
+            if flag:
+                continue
         
         its = np.arange(0,len(i),1)
         if time_name:

@@ -7,8 +7,7 @@ from datetime import datetime
 from shootout.methods.post_processors import regroup_columns
 
 def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_store=None,
-                    verbose=True, single_method=True, skip=False,
-                    **kwa):
+                    verbose=True, skip=False, **kwa):
     """ 
     This function is the main ingredient of shootout. It is a decorator, to run a python function ``my_script`` with a set of inputs to grid on. The outputs are stored in a pandas DataFrame which is stored locally.
     
@@ -94,8 +93,6 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
         name of the file containing the DataFrame, by default None and the default name is the date in long format.
     verbose : bool, optional
         choose wether run_and_track prints its progress, by default True
-    single_method : bool, optional
-        Set this to False if you are running several algorithm (i.e. outputs is a dictionary of lists) and you do not want to input algorithm_names. The method will automatically detect is several algorithms are used by counting the length of algorithm names, by default True.
     skip : bool, optional
         Set to True to skip computations, by default False.
     """
@@ -103,31 +100,36 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
     #    - missmatches input names / loop variables
     #    - solo fun vs several
     #    - algorithm_names length does not match outputs
-    # Preprocessing: converting any single value in kwa to a singleton list
-    # also tracking names of list parameters for rebuilding columns
-    list_params_keys = []
-    list_params_lengths = []
-    for i in kwa:
-        if type(kwa[i])!= list:
-            #print("Converting single parameter swipe to singleton")
-            kwa[i] = [kwa[i]]
+    
+    def inner_run_and_track(fun):    
+        print(f"verbose works?? {verbose}")
+        # Preprocessing things
+        if skip:
+            return
+
+        # Preprocessing: converting any single value in kwa to a singleton list
+        # also tracking names of list parameters for rebuilding columns
+        list_params_keys = []
+        list_params_lengths = []
+        for i in kwa:
+            if type(kwa[i])!= list:
+                #print("Converting single parameter swipe to singleton")
+                kwa[i] = [kwa[i]]
+            else:
+                # get length of items in the list
+                if type(kwa[i][0])==list:
+                    list_params_keys.append(i)
+                    list_params_lengths.append(len(kwa[i][0]))
+
+        if algorithm_names:
+            if len(algorithm_names)>1:
+                single_method=False
+            else:
+                single_method=True
         else:
-            # get length of items in the list
-            if type(kwa[i][0])==list:
-                list_params_keys.append(i)
-                list_params_lengths.append(len(kwa[i][0]))
+            # TODO Warning
+            print("Consider adding algorithm names to benefit from automatic labeling of runs")
 
-    if algorithm_names:
-        if len(algorithm_names)>1:
-            single_method=False
-    else:
-        # TODO Warning
-        print("Consider adding algorithm names to benefit from automatic labeling of runs")
-
-    if skip:
-        return
-
-    def inner_run_and_track(fun):
         # Before all, initialize our storage DataFrame
         df = pandas.DataFrame()
 
