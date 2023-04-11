@@ -46,12 +46,12 @@ exclude_patterns = []
 
 # -------- Logos and such---------------
 
-#html_logo = "_static/icon.png"
+html_logo = "_static/icon.png"
 html_theme_options = {
-   "logo": {
-      "image_light": "_static/icon.png",
-      "image_dark": "_static/icon_black.png",
-   },
+   #"logo": {
+      #"image_light": "_static/icon.png",
+      #"image_dark": "_static/icon_black.png",
+   #},
    "github_url": "https://github.com/cohenjer/shootout",
 }
 html_title = "run, store, plot"
