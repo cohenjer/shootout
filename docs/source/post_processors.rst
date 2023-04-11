@@ -1,12 +1,6 @@
 post\_processors module
 =======================
 
-..
-   .. automodule:: shootout.methods.post_processors
-      :members:
-      :undoc-members:
-      :show-inheritance:
-
 .. toctree::
    :maxdepth: 1
 
@@ -15,7 +9,3 @@ post\_processors module
    nearest_neighbors_err_at_time_or_it
    interpolate_time_and_error
    median_convergence_plot
-
-   ..
-      my_argmin
-      regroup_columns
