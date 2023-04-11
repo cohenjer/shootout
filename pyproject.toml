@@ -1,0 +1,28 @@
+# pyproject.toml
+
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shootout-opt"
+version = "0.2.1"
+description="Run algorithms, store and compare their outputs"
+authors=[{name= "Jeremy E. Cohen", email = "jeremy.cohen@cnrs.fr"}]
+license={ file = "LICENSE"}
+readme = "README.md"
+keywords = ["numerical optimisation", "visualisation", "python"]
+dependencies = [
+    "numpy >= 1.23",
+    "plotly >= 5.8.2",
+    "kaleido >= 0.2.1",
+    "matplotlib >= 3.5.3",
+    "pandas >= 1.4.2",
+]
+requires-python = ">=3.9"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.urls]
+Homepage = "https://cohenjer.github.io/shootout"
