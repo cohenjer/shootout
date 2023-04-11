@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shootout-opt"
-version = "0.2.1"
+version = "0.2.2"
 description="Run algorithms, store and compare their outputs"
 authors=[{name= "Jeremy E. Cohen", email = "jeremy.cohen@cnrs.fr"}]
 license={ file = "LICENSE"}
