@@ -16,7 +16,11 @@ Plus I am a very chaotic person, changing workflow every single paper. So I need
 - provide a few helpful functions for processing this dataframe, to produce interesting comparison plots (convergence plots, who is fastest at given threshold plots)
 
 ## Installation
-For now, no pip installation is provided. You can clone the repo and run
+The package can be pip installed using
+```python
+pip install shootout-opt
+```
+or by cloning the repo and running
 ```python
 pip install -e .
 ```

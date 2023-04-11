@@ -34,7 +34,11 @@ What this does
 
 Installation
 --------------
-For now, no pip installation is provided. You can clone the repo and run::
+The package can be pip installed using::
+
+   pip install shootout-opt
+
+or by cloning the repo and run::
 
    pip install -e .
 
