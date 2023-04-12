@@ -121,14 +121,14 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
                     list_params_keys.append(i)
                     list_params_lengths.append(len(kwa[i][0]))
 
+        single_method=True
         if algorithm_names:
             if len(algorithm_names)>1:
                 single_method=False
-            else:
-                single_method=True
         else:
             # TODO Warning
             print("Consider adding algorithm names to benefit from automatic labeling of runs")
+            print("If several outputs are considered in the wrapped function for each key in a list, you must use the algorithm name field to name each such output.")
 
         # Before all, initialize our storage DataFrame
         df = pandas.DataFrame()
