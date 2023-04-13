@@ -1,6 +1,5 @@
-numpy
-plotly
-kaleido
-matplotlib
-pandas
-pytest
+numpy >= 1.23
+plotly >= 5.8.2
+kaleido >= 0.2.1
+matplotlib >= 3.5.3
+pandas >= 1.4.2
