@@ -55,7 +55,7 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
 
     The naming of the inputs and outputs is completely free. However, naming errors/loss/utility collected in a list exactly ``errors`` and ``timings`` (time starting from 0) will allow for immediate processing with utilities from shootout such as plotting convergence curves.
 
-    The recommended syntax when many parameters are involved is to define all the parameters in a dictionary, see ``**kwa`` below. For the signature of the inner function, one should also use a dictionary that makes use of the same keys.
+    The recommended syntax when many parameters are involved is to define all the parameters in a dictionary, see ``**kwa`` below. For the signature of the inner function, one should also use a dictionary with the same keys.
 
     Parameters
     ----------
