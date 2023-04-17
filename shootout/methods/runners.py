@@ -102,7 +102,6 @@ def run_and_track(add_track=None, algorithm_names=None, path_store=None, name_st
     #    - algorithm_names length does not match outputs
     
     def inner_run_and_track(fun):    
-        print(f"verbose works?? {verbose}")
         # Preprocessing things
         if skip:
             return
