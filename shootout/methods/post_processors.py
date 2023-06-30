@@ -363,6 +363,38 @@ def interpolate_time_and_error(df, err_name="errors", time_name="timings", k=0, 
 
     return df
 
+def median_or_mean_and_errors(df, value_plotted, ignored_parameters, quantile=0.8, mean=True):
+    """
+    Compute the median or mean of values in column ``value_plotted`` in df, ignoring (i.e. grouping-by) columns in list ``ignored_parameters``.
+    Adds upper/lower estimates (aka error bars) for the values ``df["value_plotted"]``. The estimates are taken over the variables NOT in ``df[x]`` for x in ``parameters`` using quantiles.
+    
+    This function creates a new dataframe with ``3 + len(ignored_parameters)`` columns named ``value_plotted``, ``value_plotted``_08 and ``value_plotted``_02 and the strings in ``ignored_parameters``.
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        input dataframe with column ``value_plotted`` and ``parameters``.
+    value_plotted : string
+        the name of the column in df for which error bars are required.
+    ignored_parameters : list of strings
+        the names of columns which are grouped-by to perform the quantile estimation. They will not be used together for the quantile estimate, use this for instance for the x variable in a y/x plot where error bars are computed on y over several seeds.
+    quantile : float, optional
+        quantile value, by default 0.8
+    mean : boolean, optional
+        True is mean is returned, False if median, by default True
+
+    Return
+    ------
+    pandas dataframe
+    """
+    df_median = df.groupby(ignored_parameters, as_index=False)[value_plotted].mean()
+    df_02 = df.groupby(ignored_parameters, as_index=False)[value_plotted].quantile(q=0.2)
+    df_08 = df.groupby(ignored_parameters, as_index=False)[value_plotted].quantile(q=0.8)
+    value_plotted_08 = value_plotted+"_08"
+    value_plotted_02 = value_plotted+"_02"
+    df_median[value_plotted_08] = df_08[value_plotted]-df_median[value_plotted]
+    df_median[value_plotted_02] = -df_02[value_plotted]+df_median[value_plotted]
+    return df_median
 
 def median_convergence_plot(df_conv, type_x="iterations", err_name="errors", time_name="timings", mean=False):
     """
