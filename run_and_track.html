@@ -1,0 +1,562 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>run_and_track &#8212; run, store, plot</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'run_and_track';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="post_processors module" href="post_processors.html" />
+    <link rel="prev" title="runners module" href="runners.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+<div class="bd-header__inner bd-page-width">
+  <label class="sidebar-toggle primary-toggle" for="__primary">
+    <span class="fa-solid fa-bars"></span>
+  </label>
+  
+  <div class="navbar-header-items__start">
+    
+      <div class="navbar-item">
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="_static/icon.png" class="logo__image only-light" alt="Logo image"/>
+    <script>document.write(`<img src="_static/icon.png" class="logo__image only-dark" alt="Logo image"/>`);</script>
+  
+  
+</a></div>
+    
+  </div>
+  
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="API.html">
+                        API
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+        </div>
+      
+      
+        <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/cohenjer/shootout" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+    </div>
+  
+
+  
+    <label class="sidebar-toggle secondary-toggle" for="__secondary">
+      <span class="fa-solid fa-outdent"></span>
+    </label>
+  
+</div>
+
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          <div class="navbar-item"><nav class="navbar-nav">
+  <p class="sidebar-header-items__title"
+     role="heading"
+     aria-level="1"
+     aria-label="Site Navigation">
+    Site Navigation
+  </p>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="API.html">
+                        API
+                      </a>
+                    </li>
+                
+
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="examples.html">
+                        Examples
+                      </a>
+                    </li>
+                
+  </ul>
+</nav></div>
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/cohenjer/shootout" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-square-github"></i></span>
+            <label class="sr-only">GitHub</label></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="runners.html">runners module</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-1"><i class="fa-solid fa-chevron-down"></i></label><ul class="current">
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">run_and_track</a></li>
+</ul>
+</li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="post_processors.html">post_processors module</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" type="checkbox"/><label class="toctree-toggle" for="toctree-checkbox-2"><i class="fa-solid fa-chevron-down"></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="find_best_at_all_thresh.html">find_best_at_all_thresh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="df_to_convergence_df.html">df_to_convergence_df</a></li>
+<li class="toctree-l2"><a class="reference internal" href="nearest_neighbors_err_at_time_or_it.html">nearest_neighbors_err_at_time_or_it</a></li>
+<li class="toctree-l2"><a class="reference internal" href="interpolate_time_and_error.html">interpolate_time_and_error</a></li>
+<li class="toctree-l2"><a class="reference internal" href="median_convergence_plot.html">median_convergence_plot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="median_or_mean_and_errors.html">median_or_mean_and_errors</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+
+
+<nav aria-label="Breadcrumbs">
+  <ul class="bd-breadcrumbs" role="navigation" aria-label="Breadcrumb">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="API.html" class="nav-link">API</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="runners.html" class="nav-link">runners module</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">run_and_track</li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="run-and-track">
+<h1>run_and_track<a class="headerlink" href="#run-and-track" title="Permalink to this heading">#</a></h1>
+<dl class="py method">
+<dt class="sig sig-object py" id="shootout.methods.runners.run_and_track">
+<span class="sig-prename descclassname"><span class="pre">runners.</span></span><span class="sig-name descname"><span class="pre">run_and_track</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">algorithm_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name_store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwa</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#shootout.methods.runners.run_and_track" title="Permalink to this definition">#</a></dt>
+<dd><p>This function is the main ingredient of shootout. It is a decorator, to run a python function <code class="docutils literal notranslate"><span class="pre">my_script</span></code> with a set of inputs to grid on. The outputs are stored in a pandas DataFrame which is stored locally.</p>
+<p>Shootout is designed to make optimization algorithms comparison easier, so the target application is to lift up a code comparing algorithms on single parameter settings to a full comparison and storing all parameters and results.</p>
+<p>A few restrictions are placed on the wrapped function:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>outputs is one dictionary</p></li>
+<li><p>the errors, timings and any other algorithm dependent quantity must be inside lists of length the number of algorithms.</p></li>
+</ul>
+</div></blockquote>
+<p>In single_method mode, 2. is not applied. We allow the user to simply provide anything that will be added as an object to the df.</p>
+<p>A toy example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@run_and_track</span><span class="p">(</span><span class="n">nb_seeds</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">10</span><span class="p">],</span> <span class="n">m</span><span class="o">=</span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">8</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">my_script</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">12</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">return</span> <span class="p">{</span> <span class="s2">&quot;something&quot;</span><span class="p">:</span> <span class="n">n</span><span class="o">+</span><span class="n">m</span><span class="o">+</span><span class="n">p</span> <span class="p">}</span>
+</pre></div>
+</div>
+<p>will return a dataframe containing four columns <code class="docutils literal notranslate"><span class="pre">n</span></code> , <code class="docutils literal notranslate"><span class="pre">m</span></code> , <code class="docutils literal notranslate"><span class="pre">something</span></code> and <code class="docutils literal notranslate"><span class="pre">seed</span></code> , with 5x2x2 rows (5 runs which are here exactly the same, two values for n and two values for m).
+Note that the function should output a dictionary.</p>
+<p><strong>Syntax:</strong>
+In the case of a single algorithm to run with several hyperparameters, the syntax looks like this:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@run_and_track</span><span class="p">(</span><span class="n">algorithm_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;My favorite Algorithm&#39;</span><span class="p">],</span> <span class="n">hyperparameter</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">10</span><span class="p">],</span> <span class="n">seed</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span><span class="mi">975</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">my_script</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">hyperparameter</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># some random generation using seed, e.g. with numpy randomstate</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># seed will be populated by numbers in the seed list</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># and hyperparameter with 0.1, 1 and 10</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">errors</span><span class="p">,</span> <span class="n">timings</span><span class="p">,</span> <span class="n">anything_else</span> <span class="o">=</span> <span class="n">my_algorithm</span><span class="p">(</span><span class="n">random_data</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">hyperparameter</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="n">errors</span><span class="p">,</span> <span class="s2">&quot;timings&quot;</span><span class="p">:</span> <span class="n">timings</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>where errors and timings must have the same length.</p>
+<p>For several algorithms, say two, the syntax for the returns of <code class="docutils literal notranslate"><span class="pre">my_script</span></code> function is similar but slightly different:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@run_and_track</span><span class="p">(</span><span class="n">algorithm_names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;My Favorite Algorithm&#39;</span><span class="p">,</span> <span class="s1">&#39;my annoying competitor&#39;</span><span class="p">],</span> <span class="n">seed</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">17</span><span class="p">,</span><span class="mi">597</span><span class="p">],</span> <span class="n">hyperparameter</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">10</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">my_script</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">hyperparameter</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># some random generation using seed, e.g. with numpy randomstate</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># seed will be populated by numbers from 0 to nb_seeds</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="c1"># and hyperparameter with 0.1, 1 and 10</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">errors</span><span class="p">,</span> <span class="n">timings</span><span class="p">,</span> <span class="n">anything_else</span> <span class="o">=</span> <span class="n">my_algorithm</span><span class="p">(</span><span class="n">random_data</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">hyperparameter</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">errors2</span><span class="p">,</span> <span class="n">timings2</span><span class="p">,</span> <span class="n">anything_else2</span> <span class="o">=</span> <span class="n">my_competitor</span><span class="p">(</span><span class="n">random_data</span><span class="p">,</span><span class="n">n</span><span class="p">,</span><span class="n">m</span><span class="p">,</span><span class="n">hyperparameter</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">errors</span><span class="p">,</span> <span class="n">errors2</span><span class="p">],</span> <span class="s2">&quot;timings&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">timings</span><span class="p">,</span> <span class="n">timings2</span><span class="p">]}</span>
+</pre></div>
+</div>
+<p>The naming of the inputs and outputs is completely free. However, naming errors/loss/utility collected in a list exactly <code class="docutils literal notranslate"><span class="pre">errors</span></code> and <code class="docutils literal notranslate"><span class="pre">timings</span></code> (time starting from 0) will allow for immediate processing with utilities from shootout such as plotting convergence curves.</p>
+<p>The recommended syntax when many parameters are involved is to define all the parameters in a dictionary, see <code class="docutils literal notranslate"><span class="pre">**kwa</span></code> below. For the signature of the inner function, one should also use a dictionary with the same keys.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>**kwa</strong> (<em>dictionary</em><em>, </em><em>optional</em>) – <p>A dictionary containing all the elements in the signature of the function to run. Typically use in the following fashion:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">vars</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">{</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="s2">&quot;n&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mi">15</span><span class="p">],</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="s2">&quot;m&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">25</span><span class="p">,</span><span class="mi">30</span><span class="p">],</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="s2">&quot;noise&quot;</span><span class="p">:</span> <span class="mf">0.25</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>        <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nd">@run_and_track</span><span class="p">(</span><span class="o">**</span><span class="nb">vars</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">myalgorithm</span><span class="p">(</span><span class="o">**</span><span class="n">v</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="n">xxx</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;n&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="o">...</span>
+</pre></div>
+</div>
+<p>Another syntax is tolerated although not recommended, where the user may mismatch the signatures of “&#64;run_and_track” and the ran function as such:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nd">@run_and_track</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mi">15</span><span class="p">],</span> <span class="n">m</span><span class="o">=</span><span class="p">[</span><span class="mi">25</span><span class="p">,</span><span class="mi">30</span><span class="p">],</span> <span class="n">noise</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">add_track</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mytrack&quot;</span><span class="p">:[</span><span class="mi">7</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">20</span><span class="p">]},</span> <span class="n">name_store</span><span class="o">=</span><span class="s2">&quot;test-df&quot;</span><span class="p">,</span> <span class="n">nb_seeds</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">algorithm_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;method1&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">myalgorithm</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span><span class="n">m</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span><span class="n">r</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="n">random</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">noise</span><span class="o">=</span><span class="mf">0.5</span><span class="p">):</span>
+<span class="gp">&gt;&gt;&gt; </span>    <span class="o">...</span>
+</pre></div>
+</div>
+<p>the entries in run_and_track must then be repeated in the function to be run. Note that both methods cannot be combined, so as to promote the use of the first method which is cleaner (all function parameters used for the run will be stored and the variables are not duplicated).
+By default None.</p>
+</p></li>
+<li><p><strong>add_track</strong> (<em>dictionary</em><em>, </em><em>optional</em>) – a dictionary of values to store manually. The inputs and outputs are stored anyway so this option should be avoided if possible. By default None</p></li>
+<li><p><strong>algorithm_names</strong> (<em>list</em><em>, </em><em>optional</em>) – provide a list of name for each algorithm that will be run in the script. The names should match the outputs of the script if the outputs are lists (same size and order). Using this input is recommended for easily naming plots in post-processing stages. By default None</p></li>
+<li><p><strong>path_store</strong> (<em>string</em><em>, </em><em>optional</em>) – the path (relative or absolute) to the directory where the DataFrame will be stored, by default None, and default directory is the current working directory.</p></li>
+<li><p><strong>name_store</strong> (<em>string</em><em>, </em><em>optional</em>) – name of the file containing the DataFrame, by default None and the default name is the date in long format.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em><em>, </em><em>optional</em>) – choose wether run_and_track prints its progress, by default True</p></li>
+<li><p><strong>skip</strong> (<em>bool</em><em>, </em><em>optional</em>) – Set to True to skip computations, by default False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="runners.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">runners module</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="post_processors.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">post_processors module</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#shootout.methods.runners.run_and_track"><code class="docutils literal notranslate"><span class="pre">runners.run_and_track()</span></code></a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+  <p class="copyright">
+    
+      © Copyright 2023, Jeremy E. Cohen.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item"><p class="theme-version">
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.13.3.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
