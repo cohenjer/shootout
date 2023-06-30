@@ -9,3 +9,4 @@ post\_processors module
    nearest_neighbors_err_at_time_or_it
    interpolate_time_and_error
    median_convergence_plot
+   median_or_mean_and_errors
